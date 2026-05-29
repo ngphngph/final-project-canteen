@@ -1,0 +1,228 @@
+USERS ||--o{Students
+USERS ||--o{Teachers
+USERS ||--o{Wallets
+
+Admin_USERS ||--o{Wallet_Transactions
+
+Wallets ||--o{ Wallet_Transactions
+
+USERS ||--o{ Orders
+Orders ||--o{ Order_Items
+Order_Items ||--o{ Meal_Pickups
+
+Menus ||--o{ Order_Items
+Dishes ||--o{ MENU_ITEMS
+Drinks ||--o{ MENU_ITEMS
+
+kitchen_USERS ||--o{ Menus
+
+Carts ||--o{ Cart_Items
+Menus ||--o{ Cart_Items
+MENU_ITEMS ||--o{ Cart_Items
+
+
+
+USERS{
+    User_ID      PK
+    Password_Hash
+    Phone  
+   }  
+
+Students{
+    Student_ID   PK
+    User_ID      FK
+    Student_No
+}
+
+Teachers{
+    Teacher_ID   PK
+    User_ID      FK
+    Teacher_No
+}
+
+Wallets{
+    Wallet_ID   PK
+    User_ID     FK
+    Admin_ID    FK
+    Balance
+}
+
+Wallet_Transactions{
+     Transaction_ID PK
+     Wallet_ID   FK
+     Admin_ID    FK
+     Amount 
+     TYPE (Recharge/Deduct/Refund)
+     Description
+     Created_At  UTC
+}
+
+Orders{
+     Order_ID   PK
+     User_ID    FK
+     Total_Amt
+     Total_Qty   這筆訂單點了多少個套餐 (用以判斷是否觸發訂金)
+     Deposit_Amt 訂金金額 (點 >= 4 個套餐時，此處為 50，否則為 0)     
+     Order_Status ([狀態]: Pending_Pay, Deposit_Paid, Fully_Paid, Complete)
+     Created_At   UTC
+}
+
+Order_Items{
+     Item_ID    PK
+     Order_ID   FK
+     Menu_ID    FK
+     Quantity
+     Pickup_Status (Pending, Picked_Up)
+     Special_Note (敏感) (不要海鮮)加上長度上限（如 200 字）並於應用層做關鍵字審查，避免 DoS 與不當內容
+     
+}
+
+Meal_Pickups{
+     Pickup_ID   PK
+     Item_ID     FK
+     Admin_ID    FK
+     Method  (phone last 4 String)+ 訂單號末三碼」
+     Expected_Time    | ----> 預計取餐時間 (例如: 12:00)   UTC
+     Actual_Time      | ----> 實際取餐時間 (沒來就是 NULL)  UTC
+     Admin_Notified   | ----> 0 = 未通知, 1 = 已通知 Admin
+}
+
+Drinks {
+      Drinks_ID   PK
+      Name        
+      Price
+      Picture
+      Category (走甜) 
+}
+
+Dishes {
+      Dish_ID    PK
+      Name
+      Price
+      Picture
+      Category (少油)   
+}
+
+Menus {
+       Menu_ID   PK
+       Kitchen_ID FK
+       Admin_ID   FK
+       Supply_Time = Meal_Pickups (Expected_Time) "預計取餐時間"
+       Initial_Stock   例如: 100 (今天準備 100 份)
+       Available_Stock 例如: 3 (剩餘可購買數量) Stock - ORDER_Items
+       Is_Sold_Out     BIT / Boolean (0 = 有貨, 1 = SOLD OUT)
+       Booking_Open (1800)
+       Booking_Close(1100)
+       Meal_Type (Monday - Saturday)
+}
+
+MENU_ITEMS {
+        int Menu_Item_ID PK "中介表主鍵"
+        int Menu_ID FK "關聯套餐"
+        int Dish_ID FK  
+        int Drink_ID FK
+        varchar Group_Tag "分組標籤 (例: 主餐/飲料A/飲料B)"
+        decimal Markup_Price "加價購金額 (預設0)"
+        boolean Is_Default "是否為預設選項"
+    }
+
+Cart_Items (購物車明細 - 補強){
+       Cart_Item_ID (PK)
+       Cart_ID (FK)
+       Menu_ID (FK)
+       Chosen_Menu_Items (Text/JSON) --> 儲存使用者針對該套餐挑選的非預設 Menu_Item_ID
+       Quantity (Int)
+}
+
+Carts {
+    Cart_ID       PK
+    User_ID       FK    --> 關聯 USERS.User_ID，每個使用者同時間只有一個有效購物車
+    Created_At    UTC   --> 購物車建立時間
+    Updated_At    UTC   --> 最後更新時間（可用於判斷是否清空過期購物車）
+}
+
+Kitchen_Users {
+       Kitchen_ID  PK
+       Vendor_Name
+       phone
+}
+
+Admin_Users {
+        Admin_ID  PK
+        Username
+        phone
+}
+       
+       
+5 大 系統  
+1. 使用者與權限管理系統 (User & Role Management)
+USERS：核心帳號表（儲存密碼雜湊與手機）。
+Students：學生資料延伸表（記錄學號）。T
+eachers：教師資料延伸表（記錄教職員編號）。
+Admin_Users：後台管理員表（負責上架、核銷、儲值）。
+Kitchen_Users：廚房廠商表（負責確認今日備貨量、看接單明細）。
+
+2. 菜單與套餐配置系統 (Menu & Combo Management)
+負責管理供應的餐點、飲料，以及如何將它們組合成每日套餐。
+Dishes：單品菜餚庫（如：少油排骨飯、雞胸肉沙拉）。
+Drinks：單品飲料庫（如：走甜微冰綠茶、拿鐵）。
+Menus：每日套餐主表（控制當天供應時間、訂購開放/截止時間、初始與剩餘庫存、是否完售）。
+MENU_ITEMS：套餐與單品的中介動態配置表（設定套餐內包含哪些菜餚/飲料、是否為預設、換購加價金額 Markup_Price）。
+      
+3. 購物車與暫存系統 (Cart & Pre-checkout System)
+負責暫存使用者選購的餐點，並在結帳前即時試算金額與訂金。
+Carts：使用者購物車主表。
+Cart_Items：購物車明細表（記錄選購的套餐、數量，並以 JSON 記錄換購的自訂選項，用以即時判斷是否滿 4 份觸發訂金）。
+
+4. 金流錢包與訂單交易系統 (Wallet & Order System)
+負責處理訂單生成、狀態流轉、訂金判定，以及虛擬錢包的儲值與扣款。
+Orders：訂單主表（記錄訂單狀態、總金額、總數量，以及自動判定 \(\ge 4\) 份時填入的 Deposit_Amt = 50 訂金）。
+Order_Items：訂單明細表（記錄購買的套餐與數量，並包含 Special_Note 敏感字與長度審查防禦）。
+Wallets：使用者虛擬錢包（記錄餘額，需防範浮點數精度流失）。
+Wallet_Transactions：錢包流水帳（記錄管理員手動儲值 Recharge、系統扣款 Deduct 或退款 Refund）。
+
+5. 履約取餐與核銷系統 (Fulfillment & Pickup System)
+負責餐點製作完成後的現場核銷、通知與實際取餐時間記錄。
+Meal_Pickups：取餐核銷表（使用 Method「手機後四碼+訂單末三碼」進行快速防錯核銷，並記錄預計與實際取餐時間、是否已通知管理員等狀態）。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     1
+    
+    
+
+

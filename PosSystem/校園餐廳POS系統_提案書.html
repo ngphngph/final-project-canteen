@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>校園餐廳 POS 系統 — 系統建置提案書</title>
+<style>
+  :root {
+    --primary: #1F4E78;
+    --primary-light: #2E74B5;
+    --accent: #D9534F;
+    --bg: #FFFFFF;
+    --bg-soft: #F5F8FB;
+    --bg-alt: #EDF2F7;
+    --text: #1F2A37;
+    --muted: #6B7280;
+    --border: #D9E1EC;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: "Microsoft JhengHei", "微軟正黑體", "PingFang TC", "Helvetica Neue", Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg-soft);
+    margin: 0;
+    padding: 40px 20px;
+    line-height: 1.75;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--bg);
+    padding: 64px 72px;
+    box-shadow: 0 10px 30px rgba(31, 78, 120, 0.08);
+    border-radius: 12px;
+  }
+
+  .cover {
+    text-align: center;
+    padding: 80px 0 60px;
+    border-bottom: 3px solid var(--primary);
+    margin-bottom: 40px;
+  }
+
+  .cover .badge {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+
+  .cover h1 {
+    font-size: 44px;
+    color: var(--primary);
+    margin: 0 0 10px;
+    letter-spacing: 2px;
+  }
+
+  .cover h2 {
+    font-size: 22px;
+    color: var(--primary-light);
+    font-weight: 500;
+    margin: 0 0 50px;
+  }
+
+  .cover .meta {
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .cover .meta span {
+    margin: 0 12px;
+  }
+
+  h1 {
+    color: var(--primary);
+    font-size: 26px;
+    border-left: 6px solid var(--primary);
+    padding: 6px 0 6px 16px;
+    margin: 48px 0 18px;
+  }
+
+  h2 {
+    color: var(--primary-light);
+    font-size: 20px;
+    margin: 28px 0 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  h3 {
+    color: #333;
+    font-size: 17px;
+    margin: 20px 0 8px;
+  }
+
+  p { margin: 8px 0 14px; font-size: 16px; }
+
+  ul, ol {
+    margin: 8px 0 18px;
+    padding-left: 26px;
+  }
+
+  li {
+    margin-bottom: 6px;
+    font-size: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 15px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  thead th {
+    background: var(--primary);
+    color: #fff;
+    text-align: left;
+    padding: 12px 14px;
+    font-weight: 600;
+  }
+
+  tbody td {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: var(--bg-soft);
+  }
+
+  .toc {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 28px;
+    margin-bottom: 40px;
+  }
+
+  .toc h3 {
+    margin-top: 0;
+    color: var(--primary);
+  }
+
+  .toc ol { padding-left: 22px; }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover { color: var(--primary-light); text-decoration: underline; }
+
+  .callout {
+    background: #FFF7E6;
+    border-left: 5px solid #F0AD4E;
+    padding: 14px 18px;
+    margin: 18px 0;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .pill-high { background: #FCE4E4; color: #B91C1C; }
+  .pill-mid { background: #FEF3C7; color: #92400E; }
+  .pill-low { background: #DCFCE7; color: #166534; }
+
+  .footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    text-align: center;
+    font-size: 13px;
+  }
+
+  code {
+    background: var(--bg-alt);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- 封面 -->
+  <div class="cover">
+    <div class="badge">PROPOSAL · 2026</div>
+    <h1>校園餐廳 POS 系統</h1>
+    <h2>Kitchen Ordering &amp; Wallet System — 系統建置提案書</h2>
+    <div class="meta">
+      <span>提案日期：2026 年 5 月 28 日</span>
+      <span>|</span>
+      <span>版本：v2.0（客戶簡版）</span>
+    </div>
+  </div>
+
+  <!-- 目錄 -->
+  <div class="toc">
+    <h3>目錄</h3>
+    <ol>
+      <li><a href="#s1">專案背景</a></li>
+      <li><a href="#s2">系統目標</a></li>
+      <li><a href="#s3">系統角色與權限</a></li>
+      <li><a href="#s4">核心功能模組</a></li>
+      <li><a href="#s5">主要業務流程</a></li>
+      <li><a href="#s6">資料模型摘要</a></li>
+      <li><a href="#s7">系統優化規劃</a></li>
+      <li><a href="#s8">技術架構建議</a></li>
+      <li><a href="#s9">開發時程</a></li>
+      <li><a href="#s10">風險評估與對策</a></li>
+      <li><a href="#s11">預期效益</a></li>
+      <li><a href="#s12">專案報價</a></li>
+      <li><a href="#s13">結論</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. 專案背景 -->
+  <h1 id="s1">一、專案背景</h1>
+  <p>校園師生用餐需求集中於午餐時段，傳統現金結帳方式效率低、易產生排隊壅塞；同時廚房端難以即時掌握當日備餐數量，常造成「備太多浪費」或「備太少售罄」的兩難。為提升用餐體驗、降低營運成本，本案規劃導入一套整合「線上預訂、電子錢包、廚房備餐、取餐核銷」的校園 POS 系統。</p>
+  <p>本系統聚焦三大目標：使用者端的<strong>便利性</strong>、廚房端的<strong>可控性</strong>，以及行政端的<strong>可追溯性</strong>，並以 <code>Kitchen.txt</code> 所列之資料模型為基礎，為功能落地提供穩固結構。</p>
+
+  <!-- 2. 系統目標 -->
+  <h1 id="s2">二、系統目標</h1>
+  <ul>
+    <li>提供學生與教師線上預訂套餐、繳付訂金、查詢餘額的完整自助流程。</li>
+    <li>讓廚房可預先設定每日供應數量、開放與關閉預訂時間，避免食材浪費。</li>
+    <li>讓行政端能即時為錢包進行儲值、扣款、退款，並完整保留交易紀錄供稽核。</li>
+    <li>透過取餐核銷機制，掌握每筆訂單的預計取餐與實際取餐情形，降低逾時未取的損失。</li>
+    <li>資料模型可擴充至未來「多攤位」、「多時段」（早午晚餐）與「節慶活動套餐」等情境。</li>
+  </ul>
+
+  <!-- 3. 角色 -->
+  <h1 id="s3">三、系統角色與權限</h1>
+  <p>本系統共分四類使用者，所有人皆繼承於 <code>USERS</code> 主檔，並以子表延伸專屬欄位：</p>
+  <table>
+    <thead>
+      <tr><th style="width:18%">角色</th><th style="width:22%">代表資料表</th><th>主要權限</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>學生 / 教師</td><td>Students / Teachers</td><td>註冊、登入、瀏覽菜單、下訂、繳付訂金與尾款、查詢錢包</td></tr>
+      <tr><td>廚房 (Vendor)</td><td>Kitchen_Users</td><td>建立每日菜單、設定供應量與預訂時段、回報沽清狀態</td></tr>
+      <tr><td>行政 (Admin)</td><td>Admin_Users</td><td>錢包儲值 / 扣款 / 退款、取餐核銷、產出報表、處理客訴</td></tr>
+      <tr><td>系統 (System)</td><td>—</td><td>排程任務：每日重置庫存、關閉預訂、寄送提醒、結算</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 4. 核心功能 -->
+  <h1 id="s4">四、核心功能模組</h1>
+
+  <h2>4.1 會員與錢包模組</h2>
+  <div class="callout" style="background:#FFF7E6; border-left-color:#F0AD4E;">
+    <strong>Phase 1–2 簡化方案：</strong>付款暫以<strong>現金 / 支票</strong>方式處理，由 <strong>Admin 手動於後台調整訂金與餘額</strong>，系統僅作為金流紀錄之載具。完整自動付款（線上儲值、第三方金流串接、自動扣款）將於 <strong>Phase 3–4</strong> 推出。
+  </div>
+  <ul>
+    <li>註冊 / 登入：以手機號為帳號、密碼以 hash 儲存（<code>Password_Hash</code>）。</li>
+    <li><strong>錢包（Phase 1–2 手動模式）：</strong>每位使用者建立 Wallet，<code>Balance</code> 由 Admin 收到現金或支票後手動入賬。</li>
+    <li><strong>訂金 / 尾款（Phase 1–2 手動模式）：</strong>使用者下單後產生待付金額，Admin 確認收款後於後台手動標記 <code>Order_Status</code> 為 <strong>Deposit_Paid</strong> / <strong>Fully_Paid</strong>。</li>
+    <li>交易明細：Admin 每筆手動調整皆寫入 <code>Wallet_Transactions</code>（含 <code>Admin_ID</code>、<code>TYPE</code>、<code>Description</code>、<code>Created_At</code>），保留完整稽核軌跡。</li>
+    <li><strong>Phase 3–4 升級：</strong>線上儲值、Linepay / Stripe / 校園卡串接、自動扣款、自助退款。</li>
+  </ul>
+
+  <h2>4.2 菜單與庫存模組</h2>
+  <ul>
+    <li>菜單 (<code>Menus</code>) 為「主菜 + 飲品」之組合套餐，由廚房 (<code>Kitchen_Users</code>) 維護。</li>
+    <li>每日設定 <code>Initial_Stock</code> 與 <code>Available_Stock</code>，售完自動標記 <code>Is_Sold_Out</code>。</li>
+    <li>以 <code>Booking_Open</code>（如 18:00）與 <code>Booking_Close</code>（如 11:00）控制預訂時間窗。</li>
+    <li><code>Meal_Type</code> 支援週一至週六不同供應計畫，方便週間排程。</li>
+  </ul>
+
+  <h2>4.3 訂單與訂金模組</h2>
+  <ul>
+    <li>使用者建立訂單 (<code>Orders</code>) 後，依品項建立 <code>Order_Items</code>。</li>
+    <li>當 <code>Total_Qty ≥ 4</code> 時，系統自動帶入 <code>Deposit_Amt = 50</code>（訂金機制）。</li>
+    <li><code>Order_Status</code> 共四階段：<strong>Pending_Pay → Deposit_Paid → Fully_Paid → Complete</strong>。</li>
+    <li><strong>Phase 1–2：</strong>Admin 收取現金 / 支票後，於後台手動點按「已收訂金 / 已收尾款」更新狀態。</li>
+    <li><code>Special_Note</code> 欄位可記錄敏感需求（如「不要海鮮」、「少油」、「走甜」）。</li>
+  </ul>
+
+  <h2>4.4 取餐核銷模組</h2>
+  <ul>
+    <li>每筆 <code>Order_Item</code> 對應一筆 <code>Meal_Pickups</code>，核銷以手機末四碼比對 (<code>Method</code>)。</li>
+    <li><code>Expected_Time</code> 為預計取餐時間，<code>Actual_Time</code> 為實際取餐時間（未到則為 <code>NULL</code>）。</li>
+    <li><code>Admin_Notified</code> 為通知旗標，逾時未取時提醒行政與廚房處理。</li>
+  </ul>
+
+  <!-- 5. 流程 -->
+  <h1 id="s5">五、主要業務流程</h1>
+
+  <h2>5.1 預訂與付款流程</h2>
+  <ol>
+    <li>使用者於 <code>Booking_Open</code> 後瀏覽當日菜單，選擇套餐並加入訂單。</li>
+    <li>系統依 <code>Total_Qty</code> 計算是否需付訂金（≥4 套餐則 <code>Deposit_Amt = 50</code>）。</li>
+    <li>使用者由電子錢包扣款 → 寫入 <code>Wallet_Transactions</code>（TYPE=Deduct）。</li>
+    <li>訂單狀態更新為 <strong>Deposit_Paid</strong> 或 <strong>Fully_Paid</strong>。</li>
+    <li><code>Booking_Close</code> 後，廚房依 <code>Order_Items</code> 統計備餐。</li>
+  </ol>
+
+  <h2>5.2 取餐核銷流程</h2>
+  <ol>
+    <li>使用者於 <code>Expected_Time</code> 抵達取餐窗口。</li>
+    <li>行政以手機末四碼於 POS 介面查詢未取訂單。</li>
+    <li>完成核銷後，<code>Meal_Pickups.Actual_Time</code> 紀錄當下時間。</li>
+    <li><code>Order_Items.Pickup_Status</code> 更新為 <strong>Picked_Up</strong>；全部完成後，<code>Order_Status → Complete</code>。</li>
+  </ol>
+
+  <h2>5.3 退款與例外處理</h2>
+  <ol>
+    <li>逾時未取：系統將 <code>Admin_Notified</code> 設為 1，由行政決定是否退訂金或全額退款。</li>
+    <li>廚房沽清：自動將 <code>Menus.Is_Sold_Out</code> 設為 1，並對已下單但未供餐者退款。</li>
+    <li>所有退款動作皆寫入 <code>Wallet_Transactions</code>（TYPE=Refund），便於月結對帳。</li>
+  </ol>
+
+  <!-- 6. 資料模型 -->
+  <h1 id="s6">六、資料模型摘要</h1>
+  <p>以下為基於 <code>Kitchen.txt</code> 整理之核心實體與關聯總表：</p>
+  <table>
+    <thead>
+      <tr><th>實體</th><th>主鍵 (PK)</th><th>主要外鍵 (FK)</th><th>用途</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>USERS</td><td>User_ID</td><td>—</td><td>全系統使用者主檔（含密碼、手機）</td></tr>
+      <tr><td>Students</td><td>Student_ID</td><td>User_ID</td><td>學生身分延伸欄位（學號）</td></tr>
+      <tr><td>Teachers</td><td>Teacher_ID</td><td>User_ID</td><td>教師身分延伸欄位（教師編號）</td></tr>
+      <tr><td>Wallets</td><td>Wallet_ID</td><td>User_ID</td><td>個人電子錢包，記錄即時餘額</td></tr>
+      <tr><td>Wallet_Transactions</td><td>Transaction_ID</td><td>Wallet_ID, Admin_ID</td><td>錢包流水帳（儲值/扣款/退款）</td></tr>
+      <tr><td>Orders</td><td>Order_ID</td><td>User_ID</td><td>訂單主檔，含訂金與狀態</td></tr>
+      <tr><td>Order_Items</td><td>Item_ID</td><td>Order_ID, Menu_ID</td><td>訂單明細，每筆對應一個套餐</td></tr>
+      <tr><td>Meal_Pickups</td><td>Pickup_ID</td><td>Item_ID, Admin_ID</td><td>取餐核銷紀錄</td></tr>
+      <tr><td>Menus</td><td>Menu_ID</td><td>Dish_ID, Drinks_ID, Kitchen_ID, Admin_ID</td><td>每日套餐與庫存設定</td></tr>
+      <tr><td>Dishes</td><td>Dish_ID</td><td>—</td><td>主菜資料庫</td></tr>
+      <tr><td>Drinks</td><td>Drinks_ID</td><td>—</td><td>飲品資料庫</td></tr>
+      <tr><td>Kitchen_Users</td><td>Kitchen_ID</td><td>—</td><td>廚房 / 攤位資料</td></tr>
+      <tr><td>Admin_Users</td><td>Admin_ID</td><td>—</td><td>行政人員資料</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 7. 改進建議 -->
+  <h1 id="s7">七、系統優化規劃</h1>
+  <p>開發前，技術團隊會先對現有資料規格做完整檢視，並於正式動工前提出優化方案，確保系統長期穩定、易於維護、可彈性擴充。</p>
+  <p>詳細之資料庫優化建議共 <strong>8 項</strong>，另載於<strong>《附件 A：資料庫改進建議》</strong>，供技術窗口參考。</p>
+
+  <!-- 8. 技術架構 -->
+  <h1 id="s8">八、技術架構建議</h1>
+  <table>
+    <thead>
+      <tr><th style="width:18%">層級</th><th style="width:32%">建議技術</th><th>理由</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>前端</td><td>React + Vite + TailwindCSS</td><td>成熟生態系、行動裝置友善，PWA 可裝至手機桌面</td></tr>
+      <tr><td>後端</td><td>Node.js (NestJS) 或 Python (FastAPI)</td><td>具良好開發效率與型別系統，可快速建模</td></tr>
+      <tr><td>資料庫</td><td>PostgreSQL 16</td><td>支援 JSONB、CHECK、Row-Level Security，適合多角色情境</td></tr>
+      <tr><td>快取 / 排程</td><td>Redis + node-cron</td><td>即時扣減庫存、<code>Booking_Open/Close</code> 自動排程</td></tr>
+      <tr><td>部署</td><td>Docker + GitHub Actions + 雲端 VPS</td><td>標準化部署、便於後續水平擴充</td></tr>
+      <tr><td>金流</td><td>校園儲值（內部）+ 第三方（如 Linepay）擴充</td><td>先以內部錢包為主、外部金流為輔</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 9. 時程 -->
+  <h1 id="s9">九、開發時程（建議）</h1>
+  <div class="callout">
+    <strong>本案配置：</strong>6 人團隊於 <strong>3 週內完成 Phase 1 + Phase 2</strong>（MVP 與核心功能），後續優化與上線階段於第 4–6 週推進，總期程 6 週。
+  </div>
+
+  <h2>9.1 團隊組成（6 人）</h2>
+  <table>
+    <thead>
+      <tr><th style="width:18%">角色</th><th style="width:10%">人數</th><th>職責</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>專案經理 / Tech Lead</td><td>1</td><td>需求釐清、進度控管、架構決策、跨組溝通</td></tr>
+      <tr><td>後端工程師</td><td>2</td><td>API 開發、資料庫設計、錢包與訂單邏輯、排程任務</td></tr>
+      <tr><td>前端工程師</td><td>2</td><td>使用者端 (學生 / 教師) 介面、行政後台、廚房後台</td></tr>
+      <tr><td>QA / DevOps</td><td>1</td><td>測試案例撰寫、CI/CD、部署、壓力測試</td></tr>
+    </tbody>
+  </table>
+
+  <h2>9.2 Phase 1 – 2 開發排程（3 週密集）</h2>
+  <table>
+    <thead>
+      <tr><th style="width:10%">週次</th><th style="width:22%">里程碑</th><th>後端工作</th><th>前端工作</th><th>QA / DevOps</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>W1</strong></td>
+        <td>Phase 1 啟動<br>資料庫 + 會員 + 錢包（手動）</td>
+        <td>PostgreSQL Schema、USERS / Students / Teachers / Wallets / Wallet_Transactions、JWT 登入、Admin 後台手動入賬 API</td>
+        <td>登入註冊頁、錢包餘額顯示頁、Admin 後台手動儲值/扣款介面</td>
+        <td>Docker 環境、GitHub Actions CI、登入 / 手動入賬單元測試</td>
+      </tr>
+      <tr>
+        <td><strong>W2</strong></td>
+        <td>Phase 1 收尾 → Phase 2<br>菜單 + 下單 + 訂金</td>
+        <td>Dishes / Drinks / Menus、Orders / Order_Items、訂金規則 (Qty≥4 → $50)、Admin 手動標記付款狀態 API</td>
+        <td>菜單瀏覽頁、購物車、訂單摘要（顯示待付金額）、廚房後台菜單維護</td>
+        <td>下單流程整合測試、Redis 庫存併發測試</td>
+      </tr>
+      <tr>
+        <td><strong>W3</strong></td>
+        <td>Phase 2 完成<br>取餐核銷 + 行政後台</td>
+        <td>Meal_Pickups、核銷 API、Admin 手動退款（現金 / 支票紀錄）、Booking_Open/Close 排程</td>
+        <td>取餐核銷介面、訂單管理頁（含「已收訂金 / 已收尾款」按鈕）、廚房沽清按鈕、報表雛形</td>
+        <td>E2E 測試、UAT 環境部署、Phase 1–2 驗收</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>9.3 Phase 3 – 4 後續排程（W4 – W6）</h2>
+  <table>
+    <thead>
+      <tr><th style="width:18%">階段</th><th style="width:14%">週次</th><th>交付項目</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>第三階段（金流自動化）</td><td>W4 – W5</td><td><strong>線上儲值、第三方金流串接（Linepay / Stripe / 校園卡）、自動扣款、自助退款</strong>、推播通知、報表強化</td></tr>
+      <tr><td>第四階段（上線）</td><td>W6</td><td>壓力測試、教育訓練、正式上線與監控</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout" style="background:#E8F4FD; border-left-color:#2E74B5;">
+    <strong>金流策略：</strong>Phase 1–2 以「現金 / 支票 + Admin 手動入賬」上線，先讓系統落地、流程跑通；Phase 3–4 再導入線上金流，可大幅降低初期開發風險與第三方串接成本，亦讓使用者有適應期。
+  </div>
+
+  <h2>9.4 Phase 1 – 2 關鍵交付物</h2>
+  <ul>
+    <li><strong>後端：</strong>RESTful API 完成 100%（會員、菜單、訂單、取餐核銷、行政管理；錢包僅含手動入賬 / 扣款）。</li>
+    <li><strong>前端：</strong>使用者端 + 廚房後台 + 行政後台三套介面可用，Admin 可手動標記付款與退款。</li>
+    <li><strong>資料庫：</strong>所有核心資料表完成建置，含索引、外鍵與基本種子資料。</li>
+    <li><strong>測試：</strong>單元測試覆蓋率 ≥ 70%，主要 E2E 流程綠燈。</li>
+    <li><strong>環境：</strong>Dev / Staging 兩套環境就緒，CI/CD 流水線可用。</li>
+    <li><strong>不包含（留待 Phase 3–4）：</strong>線上金流、自動扣款、自助儲值、自助退款、推播通知。</li>
+  </ul>
+
+  <div class="callout" style="background:#E8F4FD; border-left-color:#2E74B5;">
+    <strong>進度風險提示：</strong>3 週完成 Phase 1–2 屬於高強度排程。建議 W1 前先預留 3–5 天進行需求凍結與環境準備；並於每週末舉行 Demo 與燃盡圖檢視，及早處理風險項目。
+  </div>
+
+  <!-- 10. 風險 -->
+  <h1 id="s10">十、風險評估與對策</h1>
+  <table>
+    <thead>
+      <tr><th style="width:30%">風險項目</th><th style="width:14%">影響程度</th><th>對策</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>午餐尖峰系統壅塞</td><td><span class="pill pill-high">高</span></td><td>Redis 快取庫存、隊列扣款、預先壓測 3 倍流量</td></tr>
+      <tr><td>錢包餘額誤扣 / 重複扣款</td><td><span class="pill pill-high">高</span></td><td>交易表加冪等鍵 (idempotency_key)、所有寫入採 DB Transaction</td></tr>
+      <tr><td>敏感資訊外洩（手機末四碼）</td><td><span class="pill pill-mid">中</span></td><td>權限分級、稽核日誌、傳輸全程 HTTPS</td></tr>
+      <tr><td>廚房未即時更新沽清</td><td><span class="pill pill-mid">中</span></td><td>提供一鍵沽清按鈕、並以排程巡檢提醒</td></tr>
+      <tr><td>使用者拒繳尾款</td><td><span class="pill pill-low">低</span></td><td>訂金不退、列入信用名單，連續 3 次取消則暫停下訂</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 11. 預期效益 -->
+  <h1 id="s11">十一、預期效益</h1>
+  <ul>
+    <li><strong>用餐效率提升：</strong>預估排隊時間由 8 分鐘降至 2 分鐘以內。</li>
+    <li><strong>食材浪費下降：</strong>透過預訂制與 <code>Initial_Stock</code> 預估，預計可降低 30% 廚餘。</li>
+    <li><strong>營運可視化：</strong>行政可即時查詢每日銷售、退款與逾時未取數據。</li>
+    <li><strong>數位化校園：</strong>建立校園統一錢包雛形，未來可擴充至福利社、影印、活動報名等場域。</li>
+  </ul>
+
+  <!-- 12. 報價 -->
+  <h1 id="s12">十二、專案報價</h1>
+  <div class="callout">
+    <strong>報價說明：</strong>金額以 <strong>港幣 (HKD)</strong> 為單位，<strong>含 6 人團隊薪資、專案管理、技術文件、教育訓練、基礎建設首年費用</strong>；不含第三方金流手續費及客戶端硬體採購（如平板、廚房螢幕）。報價有效期：自提案日起 <strong>30 天</strong>。
+  </div>
+
+  <h2>12.1 報價總覽</h2>
+  <table>
+    <thead>
+      <tr><th style="width:58%">項目</th><th>金額 (HKD)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Phase 1 – 2：系統開發（3 週，6 人團隊）<br><span style="color:#6B7280; font-size:13px;">含會員、菜單、下單、訂金、取餐核銷、廚房後台、行政後台</span></td><td>$245,000</td></tr>
+      <tr><td>Phase 3 – 4：金流自動化與上線（3 週，6 人團隊）<br><span style="color:#6B7280; font-size:13px;">含線上儲值、自動扣款、推播通知、壓力測試、正式上線</span></td><td>$237,700</td></tr>
+      <tr style="background:#1F4E78; color:#fff; font-weight:bold; font-size:16px;">
+        <td>完整 4 階段總計（6 週）</td><td>$482,700</td>
+      </tr>
+      <tr style="background:#E8F4FD; font-weight:bold;">
+        <td>★ 推薦方案：先執行 Phase 1 – 2（3 週上線運行）</td><td>$245,000</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="color:#6B7280; font-size:13px; margin-top:6px;">※ 各階段報價皆已包含人力、雲端主機、教育訓練、操作手冊、60 天保固。<br>※ 詳細人力成本展開請參閱<strong>《附件 B：人力成本明細》</strong>（內部文件）。</p>
+
+  <h2>12.2 兩種啟動方式之比較</h2>
+  <table>
+    <thead>
+      <tr><th style="width:24%">方案</th><th style="width:14%">金額 (HKD)</th><th style="width:14%">期程</th><th>適合對象</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>方案 A</strong><br>Phase 1 – 2 先行</td>
+        <td><strong>$245,000</strong></td>
+        <td>3 週</td>
+        <td>希望低風險、快速上線、先以現金 / 支票方式運作，待流程穩定再決定是否加裝金流</td>
+      </tr>
+      <tr>
+        <td><strong>方案 B</strong><br>完整 4 階段</td>
+        <td><strong>$482,700</strong></td>
+        <td>6 週</td>
+        <td>希望一次到位、上線即可支援線上付款、推播通知、完整自動化流程</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>12.3 上線後維護方案（可選）</h2>
+  <table>
+    <thead>
+      <tr><th style="width:20%">方案</th><th style="width:14%">月費 (HKD)</th><th>內容</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>基礎方案</strong></td>
+        <td>$8,000</td>
+        <td>系統監控、每月 1 次安全更新、4 小時內回應、每月 8 小時 bug 修復</td>
+      </tr>
+      <tr style="background:#F2F6FA;">
+        <td><strong>標準方案</strong><br>（推薦）</td>
+        <td>$15,000</td>
+        <td>含基礎方案 + 每月 20 小時功能調整 + 月度報表 + 2 小時內回應 + 季度健康檢查</td>
+      </tr>
+      <tr>
+        <td><strong>進階方案</strong></td>
+        <td>$28,000</td>
+        <td>含標準方案 + 每月 40 小時開發人力 + 1 小時內回應 + 24/7 緊急支援 + 專屬 PM</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>12.4 付款條件（建議）</h2>
+  <table>
+    <thead>
+      <tr><th style="width:24%">階段</th><th style="width:14%">比例</th><th style="width:24%">金額 (HKD)</th><th>觸發條件</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>簽約訂金</td><td>30%</td><td>$144,810</td><td>合約簽訂後 7 日內</td></tr>
+      <tr><td>Phase 1 – 2 驗收</td><td>30%</td><td>$144,810</td><td>W3 結束、UAT 通過</td></tr>
+      <tr><td>Phase 3 – 4 驗收</td><td>30%</td><td>$144,810</td><td>W6 正式上線、無 P0 / P1 問題</td></tr>
+      <tr><td>保固期結束</td><td>10%</td><td>$48,270</td><td>上線後 60 天保固期滿</td></tr>
+    </tbody>
+  </table>
+
+  <h2>12.5 報價備註</h2>
+  <ul>
+    <li>本報價含 60 天保固期，保固期內 P0 / P1 級 bug 免費修復。</li>
+    <li>未列於規格內之新增需求，依工時另行報價。</li>
+    <li>第三方金流手續費（如 Linepay 2.9%）由業主自行承擔。</li>
+    <li>客戶端硬體（如取餐核銷用平板、廚房顯示螢幕）不在本報價內。</li>
+    <li>本報價可拆分為「Phase 1 – 2 先行」方案（HKD $245,000），上線運行 2–3 個月後再決定是否續推 Phase 3 – 4。</li>
+  </ul>
+
+  <!-- 13. 結論 -->
+  <h1 id="s13">十三、結論</h1>
+  <p>本提案以 <code>Kitchen.txt</code> 之資料模型為基礎，搭配上述功能模組、業務流程與技術架構，可有效解決現行校園餐廳之效率與管理痛點。建議優先啟動 <strong>Phase 1 – 2（3 週，HKD $245,000）</strong>，以「現金 / 支票 + Admin 手動入賬」模式快速上線，待流程穩定、使用者習慣養成後，再推進 <strong>Phase 3 – 4</strong> 之自動金流與優化。</p>
+  <p>此分階段策略可大幅<strong>降低初期投入風險</strong>、<strong>加快上線速度</strong>，並讓業主有時間觀察實際使用情形再決定是否續推完整版。</p>
+  <p>如蒙採用，後續將提交 <strong>《系統規格書》、《資料庫實體設計 (PostgreSQL DDL)》、《介面原型 (Figma)》</strong> 三份子文件，以利專案啟動。</p>
+
+  <div class="footer">
+    校園餐廳 POS 系統 · 系統建置提案書 · v2.0 · 2026-05-28<br>
+    詳細技術文件另見：附件 A（資料庫改進建議）、附件 B（人力成本明細）
+  </div>
+
+</div>
+
+</body>
+</html>

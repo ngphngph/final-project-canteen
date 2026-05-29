@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>附件 B — 人力成本明細</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Microsoft JhengHei", "微軟正黑體", "PingFang TC", "Helvetica Neue", Arial, sans-serif;
+    color: #1F2A37;
+    background: #F5F8FB;
+    margin: 0;
+    padding: 40px 20px;
+    line-height: 1.7;
+  }
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 56px 64px;
+    box-shadow: 0 10px 30px rgba(31, 78, 120, 0.08);
+    border-radius: 12px;
+  }
+  .header {
+    border-bottom: 3px solid #1F4E78;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+  .badge {
+    display: inline-block;
+    background: #1F4E78;
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  h1 {
+    color: #1F4E78;
+    font-size: 28px;
+    margin: 0 0 6px;
+  }
+  h2 {
+    color: #2E74B5;
+    font-size: 20px;
+    margin: 28px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #D9E1EC;
+  }
+  .subtitle { color: #6B7280; font-size: 14px; }
+  .intro {
+    background: #FFF7E6;
+    border-left: 5px solid #F0AD4E;
+    padding: 14px 18px;
+    margin: 20px 0 28px;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+  .confidential {
+    background: #FCE4E4;
+    border-left: 5px solid #B91C1C;
+    padding: 12px 18px;
+    margin: 16px 0;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #7A1A1A;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 15px;
+    background: #fff;
+    border: 1px solid #D9E1EC;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  thead th {
+    background: #1F4E78;
+    color: #fff;
+    text-align: left;
+    padding: 12px 14px;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-top: 1px solid #D9E1EC;
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) td { background: #F5F8FB; }
+  .total-row { background: #EDF2F7 !important; font-weight: bold; }
+  .grand-total { background: #1F4E78 !important; color: #fff !important; font-weight: bold; font-size: 16px; }
+  .note { color: #6B7280; font-size: 13px; margin-top: 4px; }
+  .footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #D9E1EC;
+    color: #6B7280;
+    text-align: center;
+    font-size: 13px;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="header">
+    <div class="badge">APPENDIX B · 內部成本文件</div>
+    <h1>附件 B：人力成本明細</h1>
+    <div class="subtitle">校園餐廳 POS 系統 · 內部財務 / 投標參考 · 2026-05-28</div>
+  </div>
+
+  <div class="confidential">
+    <strong>⚠ 機密文件：</strong>本文件含人力週費明細，僅供內部財務、PM 與投標窗口使用，<strong>請勿提供予客戶</strong>。對外報價請以《校園餐廳 POS 系統建置提案書》之總價表為準。
+  </div>
+
+  <div class="intro">
+    本明細為 6 人團隊於 6 週（Phase 1–4）之人力週費展開。所有金額單位為港幣 (HKD)，已依業主議價結果調整至原報價之 <strong>70%</strong>。
+  </div>
+
+  <h2>1. Phase 1 – 2 人力明細（3 週，現金 / 支票模式上線）</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">角色</th>
+        <th style="width:10%">人數</th>
+        <th style="width:14%">週費 (HKD)</th>
+        <th style="width:10%">週數</th>
+        <th style="width:14%">人天</th>
+        <th>小計 (HKD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>專案經理 / Tech Lead</td><td>1</td><td>$14,000</td><td>3</td><td>15</td><td>$42,000</td></tr>
+      <tr><td>後端工程師</td><td>2</td><td>$10,500</td><td>3</td><td>30</td><td>$63,000</td></tr>
+      <tr><td>前端工程師</td><td>2</td><td>$10,500</td><td>3</td><td>30</td><td>$63,000</td></tr>
+      <tr><td>QA / DevOps</td><td>1</td><td>$8,400</td><td>3</td><td>15</td><td>$25,200</td></tr>
+      <tr class="total-row"><td colspan="4">Phase 1 – 2 人力小計</td><td>90 人天</td><td>$193,200</td></tr>
+    </tbody>
+  </table>
+  <p class="note">※ 平均日費 ≈ HKD $2,147 / 人天；單週團隊總成本 ≈ HKD $64,400。</p>
+
+  <h2>2. Phase 3 – 4 人力明細（3 週，金流自動化與上線）</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">角色</th>
+        <th style="width:10%">人數</th>
+        <th style="width:14%">週費 (HKD)</th>
+        <th style="width:10%">週數</th>
+        <th style="width:14%">人天</th>
+        <th>小計 (HKD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>專案經理 / Tech Lead</td><td>1</td><td>$14,000</td><td>3</td><td>15</td><td>$42,000</td></tr>
+      <tr><td>後端工程師（含金流串接）</td><td>2</td><td>$11,200</td><td>3</td><td>30</td><td>$67,200</td></tr>
+      <tr><td>前端工程師</td><td>2</td><td>$10,500</td><td>3</td><td>30</td><td>$63,000</td></tr>
+      <tr><td>QA / DevOps（壓測 + 上線）</td><td>1</td><td>$9,100</td><td>3</td><td>15</td><td>$27,300</td></tr>
+      <tr class="total-row"><td colspan="4">Phase 3 – 4 人力小計</td><td>90 人天</td><td>$199,500</td></tr>
+    </tbody>
+  </table>
+  <p class="note">※ 後端及 QA 週費較 Phase 1–2 略增，反映金流串接與壓力測試之技術難度溢價。</p>
+
+  <h2>3. 全案人力成本彙總</h2>
+  <table>
+    <thead>
+      <tr><th style="width:50%">階段</th><th style="width:14%">人天</th><th>金額 (HKD)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Phase 1 – 2 人力</td><td>90</td><td>$193,200</td></tr>
+      <tr><td>Phase 3 – 4 人力</td><td>90</td><td>$199,500</td></tr>
+      <tr class="grand-total"><td>人力總成本（6 人 × 6 週）</td><td>180</td><td>$392,700</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. 原始報價對照（議價前 vs 議價後）</h2>
+  <table>
+    <thead>
+      <tr><th style="width:28%">角色</th><th style="width:22%">原週費 (HKD)</th><th style="width:22%">議價後 (×70%)</th><th>差額</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>專案經理 / Tech Lead</td><td>$20,000</td><td>$14,000</td><td>−$6,000</td></tr>
+      <tr><td>後端工程師</td><td>$15,000</td><td>$10,500</td><td>−$4,500</td></tr>
+      <tr><td>後端工程師（含金流）</td><td>$16,000</td><td>$11,200</td><td>−$4,800</td></tr>
+      <tr><td>前端工程師</td><td>$15,000</td><td>$10,500</td><td>−$4,500</td></tr>
+      <tr><td>QA / DevOps</td><td>$12,000</td><td>$8,400</td><td>−$3,600</td></tr>
+      <tr><td>QA / DevOps（Phase 3–4）</td><td>$13,000</td><td>$9,100</td><td>−$3,900</td></tr>
+      <tr class="total-row"><td colspan="3">人力總成本差額</td><td>−$168,300（約 30%）</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. 成本毛利檢核（內部）</h2>
+  <table>
+    <thead>
+      <tr><th style="width:36%">項目</th><th>金額 (HKD)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>對客戶人力收費</td><td>$392,700</td></tr>
+      <tr><td>實際人力成本（建議內部估算）</td><td>$235,620（約 60%）</td></tr>
+      <tr class="total-row"><td>毛利</td><td>$157,080（約 40%）</td></tr>
+    </tbody>
+  </table>
+  <p class="note">※ 實際毛利視員工薪資、外包比例與專案實際投入工時而定，本欄為估算參考值，請由財務再行核算。</p>
+
+  <h2>6. 風險與調整建議</h2>
+  <table>
+    <thead>
+      <tr><th style="width:30%">風險</th><th>說明 / 對應做法</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>毛利偏低（30% 折讓後）</td><td>建議：1) 嚴控加班；2) 部分前端 UI 改用既有元件庫；3) Phase 3 金流串接外包以節省人力。</td></tr>
+      <tr><td>進度延誤需加人</td><td>合約應加註：超出 3 週之延展依 HKD $1,050 / 人 / 日另計。</td></tr>
+      <tr><td>新增需求</td><td>以變更單 (CR) 處理，依工時 HKD $1,050 / 人 / 日報價。</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    校園餐廳 POS 系統 · 附件 B · 內部成本文件（機密） · 2026-05-28
+  </div>
+
+</div>
+
+</body>
+</html>
