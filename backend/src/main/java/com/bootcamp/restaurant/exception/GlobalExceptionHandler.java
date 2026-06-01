@@ -1,7 +1,6 @@
-package com.bootcamp.restaurant.config;
+package com.bootcamp.restaurant.exception;
 
 import com.bootcamp.restaurant.dto.ErrorResp;
-import com.bootcamp.restaurant.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
