@@ -52,6 +52,22 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResp createOrder(OrderCreateReq req) {
+        if (req.items() == null || req.items().isEmpty()) {
+            throw new IllegalArgumentException("items must not be empty");
+        }
+        for (OrderCreateReq.OrderItemReq item : req.items()) {
+            if (item.quantity() <= 0) {
+                throw new IllegalArgumentException("quantity must be positive, got: " + item.quantity());
+            }
+            if (item.unitPrice() == null || item.unitPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("unitPrice must be positive, got: " + item.unitPrice());
+            }
+            if (item.specialNote() != null && item.specialNote().length() > 200) {
+                throw new IllegalArgumentException(
+                        "specialNote must not exceed 200 characters, got: " + item.specialNote().length());
+            }
+        }
+
         // Save order shell first to get the generated orderId for FK in order items
         OrderEntity order = OrderEntity.builder()
                 .userId(req.userId())
