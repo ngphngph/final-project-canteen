@@ -114,30 +114,20 @@ class WalletServiceTest {
     }
 
     @Test
-    @DisplayName("🔴 recharge: amount = 0 → 拋出 IllegalArgumentException")
+    @DisplayName("recharge: amount = 0 → 拋出 IllegalArgumentException")
     void recharge_whenAmountIsZero_shouldThrow() {
-        WalletEntity wallet = WalletEntity.builder()
-                .walletId(1L).userId(10L).balance(BigDecimal.valueOf(100)).build();
         WalletAdjustReq req = new WalletAdjustReq(1L, BigDecimal.ZERO, "zero", "key-002");
 
-        when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-
-        // 🔴 目前實作沒有 amount 驗證，此測試必定失敗
         assertThatThrownBy(() -> walletService.recharge(1L, req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("amount");
     }
 
     @Test
-    @DisplayName("🔴 recharge: amount < 0 → 拋出 IllegalArgumentException")
+    @DisplayName("recharge: amount < 0 → 拋出 IllegalArgumentException")
     void recharge_whenAmountIsNegative_shouldThrow() {
-        WalletEntity wallet = WalletEntity.builder()
-                .walletId(1L).userId(10L).balance(BigDecimal.valueOf(100)).build();
         WalletAdjustReq req = new WalletAdjustReq(1L, BigDecimal.valueOf(-50), "neg", "key-003");
 
-        when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-
-        // 🔴 目前實作沒有 amount 驗證，此測試必定失敗
         assertThatThrownBy(() -> walletService.recharge(1L, req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("amount");
@@ -182,15 +172,10 @@ class WalletServiceTest {
     }
 
     @Test
-    @DisplayName("🔴 deduct: amount ≤ 0 → 拋出 IllegalArgumentException")
+    @DisplayName("deduct: amount ≤ 0 → 拋出 IllegalArgumentException")
     void deduct_whenAmountIsZeroOrNegative_shouldThrow() {
-        WalletEntity wallet = WalletEntity.builder()
-                .walletId(1L).userId(10L).balance(BigDecimal.valueOf(100)).build();
         WalletAdjustReq req = new WalletAdjustReq(1L, BigDecimal.ZERO, "zero", "key-006");
 
-        when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-
-        // 🔴 目前實作沒有 amount 驗證，此測試必定失敗
         assertThatThrownBy(() -> walletService.deduct(1L, req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("amount");
@@ -220,15 +205,10 @@ class WalletServiceTest {
     }
 
     @Test
-    @DisplayName("🔴 refund: amount ≤ 0 → 拋出 IllegalArgumentException")
+    @DisplayName("refund: amount ≤ 0 → 拋出 IllegalArgumentException")
     void refund_whenAmountIsNegative_shouldThrow() {
-        WalletEntity wallet = WalletEntity.builder()
-                .walletId(1L).userId(10L).balance(BigDecimal.valueOf(100)).build();
         WalletAdjustReq req = new WalletAdjustReq(1L, BigDecimal.valueOf(-10), "neg-refund", "key-008");
 
-        when(walletRepository.findById(1L)).thenReturn(Optional.of(wallet));
-
-        // 🔴 目前實作沒有 amount 驗證，此測試必定失敗
         assertThatThrownBy(() -> walletService.refund(1L, req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("amount");
