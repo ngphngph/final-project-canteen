@@ -66,8 +66,17 @@ public class WalletServiceImpl implements WalletService {
     }
 
     private WalletTransactionResp adjust(Long walletId, WalletAdjustReq req, TransactionType type) {
+        if (req.amount() == null || req.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("amount must be positive, got: " + req.amount());
+        }
+
         WalletEntity wallet = walletRepository.findById(walletId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found: " + walletId));
+
+        if (type == TransactionType.DEDUCT && wallet.getBalance().compareTo(req.amount()) < 0) {
+            throw new IllegalArgumentException(
+                    "Insufficient balance: balance=" + wallet.getBalance() + ", requested=" + req.amount());
+        }
 
         BigDecimal newBalance = type == TransactionType.DEDUCT
                 ? wallet.getBalance().subtract(req.amount())
