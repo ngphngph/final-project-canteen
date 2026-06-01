@@ -5,6 +5,7 @@ import com.bootcamp.restaurant.dto.WalletTransactionResp;
 import com.bootcamp.restaurant.entity.WalletEntity;
 import com.bootcamp.restaurant.entity.WalletTransactionEntity;
 import com.bootcamp.restaurant.enums.TransactionType;
+import com.bootcamp.restaurant.exception.ResourceNotFoundException;
 import com.bootcamp.restaurant.mapper.WalletMapper;
 import com.bootcamp.restaurant.model.WalletAdjustReq;
 import com.bootcamp.restaurant.repository.WalletRepository;
@@ -34,7 +35,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public WalletResp getWalletByUserId(Long userId) {
         WalletEntity wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found for userId: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for userId: " + userId));
         return walletMapper.map(wallet);
     }
 
@@ -66,7 +67,7 @@ public class WalletServiceImpl implements WalletService {
 
     private WalletTransactionResp adjust(Long walletId, WalletAdjustReq req, TransactionType type) {
         WalletEntity wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new RuntimeException("Wallet not found: " + walletId));
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found: " + walletId));
 
         BigDecimal newBalance = type == TransactionType.DEDUCT
                 ? wallet.getBalance().subtract(req.amount())

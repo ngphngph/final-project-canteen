@@ -6,6 +6,7 @@ import com.bootcamp.restaurant.entity.OrderEntity;
 import com.bootcamp.restaurant.entity.OrderItemEntity;
 import com.bootcamp.restaurant.enums.OrderStatus;
 import com.bootcamp.restaurant.enums.PickupStatus;
+import com.bootcamp.restaurant.exception.ResourceNotFoundException;
 import com.bootcamp.restaurant.mapper.OrderMapper;
 import com.bootcamp.restaurant.model.OrderCreateReq;
 import com.bootcamp.restaurant.repository.OrderItemRepository;
@@ -44,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResp getOrderById(Long orderId) {
         OrderEntity order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
         return orderMapper.map(order);
     }
 
@@ -95,8 +96,12 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResp updateOrderStatus(Long orderId, String status) {
         OrderEntity order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
-        order.setOrderStatus(OrderStatus.valueOf(status));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+        try {
+            order.setOrderStatus(OrderStatus.valueOf(status));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid order status: " + status);
+        }
         return orderMapper.map(orderRepository.save(order));
     }
 
