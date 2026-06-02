@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Canteen</title>
+  <link rel="stylesheet" href="/canteen-present.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { green: "#16a34a", orange: "#f97316" }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="present-ui present-admin text-slate-800">
+  <div class="min-h-screen flex">
+    <aside class="admin-sidebar w-60 shrink-0 hidden md:block">
+      <div class="p-5 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🍽</span>
+          <div>
+            <h1 class="font-bold text-base">Admin Panel</h1>
+            <p class="text-xs text-emerald-200/80">午餐訂餐系統</p>
+          </div>
+        </div>
+      </div>
+      <nav class="p-3 space-y-1 text-sm">
+        <a href="#" class="active block px-3 py-2 rounded-lg">首頁總覽</a>
+        <a href="#" class="block px-3 py-2 rounded-lg">菜單管理</a>
+        <a href="#" class="block px-3 py-2 rounded-lg pl-6 text-emerald-100/90">Dish 菜單管理</a>
+        <a href="#" class="block px-3 py-2 rounded-lg pl-6 text-emerald-100/90">Drink 菜單管理</a>
+        <a href="#" class="block px-3 py-2 rounded-lg">訂單管理</a>
+        <a href="#" class="block px-3 py-2 rounded-lg">用戶管理</a>
+      </nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="admin-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-semibold text-slate-700">午餐訂餐系統 — 管理後台</h2>
+        <div class="flex items-center gap-4 text-sm text-slate-600">
+          <span class="relative">🔔 <span class="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">3</span></span>
+          <span class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> 管理員</span>
+        </div>
+      </header>
+
+    <main class="flex-1 p-5 space-y-5">
+      <section class="present-card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-semibold text-lg text-slate-800">菜單資料總儲存</h2>
+          <p class="text-sm text-slate-500">將目前所有菜單（Dish 與 Drink）資料儲存至系統，並同步 Student / Teacher 前台。</p>
+        </div>
+        <button type="button" onclick="saveAllData()" class="present-btn-primary px-5 py-2.5 text-sm inline-flex items-center gap-2">
+          💾 儲存全部資料
+        </button>
+      </section>
+
+      <section class="present-card overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+          <h2 class="font-semibold text-lg text-slate-800">Dish 菜單管理</h2>
+          <button type="button" onclick="addDish()" class="present-btn-primary px-4 py-2 text-sm">+ 新增 Dish</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="present-table w-full text-sm">
+            <thead>
+              <tr>
+                <th class="text-left px-4 py-3">Dish</th>
+                <th class="text-left px-4 py-3">價格</th>
+                <th class="text-left px-4 py-3">庫存</th>
+                <th class="text-left px-4 py-3">狀態</th>
+                <th class="text-left px-4 py-3">Special Request</th>
+                <th class="text-left px-4 py-3">照片</th>
+                <th class="text-left px-4 py-3">操作</th>
+              </tr>
+            </thead>
+            <tbody id="dishTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="present-card overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+          <h2 class="font-semibold text-lg text-slate-800">Drink 菜單管理</h2>
+          <button type="button" onclick="addDrink()" class="present-btn-orange px-4 py-2 text-sm">+ 新增 Drink</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="present-table w-full text-sm">
+            <thead>
+              <tr>
+                <th class="text-left px-4 py-3">Drink</th>
+                <th class="text-left px-4 py-3">價格</th>
+                <th class="text-left px-4 py-3">狀態</th>
+                <th class="text-left px-4 py-3">Special Request</th>
+                <th class="text-left px-4 py-3">照片</th>
+                <th class="text-left px-4 py-3">操作</th>
+              </tr>
+            </thead>
+            <tbody id="drinkTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+      <footer class="px-5 py-3 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+        © Canteen 午餐訂餐平台 · 管理後台
+      </footer>
+    </div>
+  </div>
+
+  <script src="/canteen-store.js"></script>
+  <script>
+    const state = loadCanteenState();
+    rehydrateMenuImagesFromStore(state);
+
+    function dishStatusBadge(status) {
+      if (status === "SOLD_OUT") return '<span class="present-badge-sold">SOLD_OUT</span>';
+      return '<span class="present-badge-on">ON_LIST</span>';
+    }
+
+    function renderAdminTables() {
+      const dishBody = document.getElementById("dishTableBody");
+      dishBody.innerHTML = state.dishes.map(d => `
+        <tr class="border-t">
+          <td class="px-4 py-3"><input id="dish-name-${d.id}" class="border rounded px-2 py-1 w-40" value="${d.name}" /></td>
+          <td class="px-4 py-3"><input id="dish-price-${d.id}" class="border rounded px-2 py-1 w-24" type="number" step="0.01" value="${d.price}" /></td>
+          <td class="px-4 py-3"><input id="dish-balance-${d.id}" class="border rounded px-2 py-1 w-20" type="number" value="${d.balance}" /></td>
+          <td class="px-4 py-3">${dishStatusBadge(d.status)}</td>
+          <td class="px-4 py-3"><input id="dish-options-${d.id}" class="border rounded px-2 py-1 w-56" value="${(d.options || []).join(", ")}" /></td>
+          <td class="px-4 py-3">
+            <img src="${resolveItemImage(d)}" alt="" class="h-14 w-14 object-cover rounded border mb-1" />
+            <input type="file" accept="image/*" class="text-xs mb-1" onchange="setDishImage(${d.id}, this)" />
+            <div class="text-xs text-slate-500">檔名：${d.imageFileName || "未上載"}</div>
+          </td>
+          <td class="px-4 py-3">
+            <button type="button" onclick="deleteDish(${d.id})"
+              class="text-red-600 hover:text-red-800 text-sm font-medium">🗑 刪除</button>
+          </td>
+        </tr>
+      `).join("");
+
+      const drinkBody = document.getElementById("drinkTableBody");
+      drinkBody.innerHTML = state.drinks.map(d => `
+        <tr class="border-t">
+          <td class="px-4 py-3"><input id="drink-name-${d.id}" class="border rounded px-2 py-1 w-40" value="${d.name}" /></td>
+          <td class="px-4 py-3"><input id="drink-price-${d.id}" class="border rounded px-2 py-1 w-24" type="number" step="0.01" value="${d.price}" /></td>
+          <td class="px-4 py-3"><span class="present-badge-on">ON_LIST</span></td>
+          <td class="px-4 py-3"><input id="drink-options-${d.id}" class="border rounded px-2 py-1 w-56" value="${(d.options || []).join(", ")}" /></td>
+          <td class="px-4 py-3">
+            <img src="${resolveItemImage(d)}" alt="" class="h-14 w-14 object-cover rounded border mb-1" />
+            <input type="file" accept="image/*" class="text-xs mb-1" onchange="setDrinkImage(${d.id}, this)" />
+            <div class="text-xs text-slate-500">檔名：${d.imageFileName || "未上載"}</div>
+          </td>
+          <td class="px-4 py-3">
+            <button type="button" onclick="deleteDrink(${d.id})"
+              class="text-red-600 hover:text-red-800 text-sm font-medium">🗑 刪除</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function parseOptions(value) {
+      return value.split(",").map(s => s.trim()).filter(Boolean);
+    }
+
+    async function applyImageFromFile(type, item, file) {
+      if (!file || !item) return;
+      try {
+        const result = await persistMenuItemImage(type, item.id, file);
+        applyUploadedImageToItem(item, result);
+        collectFormIntoState();
+        saveCanteenStateAndSync(state);
+        renderAdminTables();
+        alert(`照片已上載並同步至 Student / Teacher（${file.name}）。`);
+      } catch (e) {
+        alert(e.message || "照片上載失敗");
+      }
+    }
+
+    function setDishImage(id, input) {
+      const dish = state.dishes.find(d => d.id === id);
+      if (!dish || !input.files || !input.files[0]) return;
+      applyImageFromFile("dish", dish, input.files[0]);
+      input.value = "";
+    }
+
+    function setDrinkImage(id, input) {
+      const drink = state.drinks.find(d => d.id === id);
+      if (!drink || !input.files || !input.files[0]) return;
+      applyImageFromFile("drink", drink, input.files[0]);
+      input.value = "";
+    }
+
+    function collectFormIntoState() {
+      state.dishes.forEach(d => {
+        const nameEl = document.getElementById(`dish-name-${d.id}`);
+        if (!nameEl) return;
+        const keepImageKey = d.imageStorageKey;
+        const keepImageFileName = d.imageFileName;
+        d.name = nameEl.value.trim();
+        d.price = Number(document.getElementById(`dish-price-${d.id}`).value);
+        d.balance = Number(document.getElementById(`dish-balance-${d.id}`).value);
+        d.options = parseOptions(document.getElementById(`dish-options-${d.id}`).value);
+        if (keepImageKey) d.imageStorageKey = keepImageKey;
+        if (keepImageFileName) d.imageFileName = keepImageFileName;
+      });
+      state.drinks.forEach(d => {
+        const nameEl = document.getElementById(`drink-name-${d.id}`);
+        if (!nameEl) return;
+        const keepImageKey = d.imageStorageKey;
+        const keepImageFileName = d.imageFileName;
+        d.name = nameEl.value.trim();
+        d.price = Number(document.getElementById(`drink-price-${d.id}`).value);
+        d.options = parseOptions(document.getElementById(`drink-options-${d.id}`).value);
+        if (keepImageKey) d.imageStorageKey = keepImageKey;
+        if (keepImageFileName) d.imageFileName = keepImageFileName;
+      });
+    }
+
+    function nextDishId() {
+      return state.dishes.length ? Math.max(...state.dishes.map(d => d.id)) + 1 : 1;
+    }
+
+    function nextDrinkId() {
+      return state.drinks.length ? Math.max(...state.drinks.map(d => d.id)) + 1 : 101;
+    }
+
+    function addDish() {
+      const dish = {
+        id: nextDishId(),
+        name: "新菜式",
+        price: 0,
+        balance: 0,
+        status: "SOLD_OUT",
+        image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
+        options: [],
+        imageFileName: ""
+      };
+      state.dishes.push(dish);
+      saveCanteenState(state);
+      renderAdminTables();
+      alert(`已新增 Dish #${dish.id}。`);
+    }
+
+    function addDrink() {
+      const drink = {
+        id: nextDrinkId(),
+        name: "新飲品",
+        price: 0,
+        status: "ON_LIST",
+        options: [],
+        imageFileName: ""
+      };
+      state.drinks.push(drink);
+      saveCanteenState(state);
+      renderAdminTables();
+      alert(`已新增 Drink #${drink.id}。`);
+    }
+
+    function saveAllData() {
+      collectFormIntoState();
+      try {
+        saveCanteenStateAndSync(state);
+        renderAdminTables();
+        alert("已完成儲存：已清除並重新同步 Teacher / Student 前台菜單（含照片）。");
+      } catch (e) {
+        alert(e.message || "儲存失敗");
+      }
+    }
+
+    function deleteDish(id) {
+      const dish = state.dishes.find(d => d.id === id);
+      if (!dish) return;
+      if (!confirm(`確定要刪除 Dish「${dish.name}」嗎？此操作會同步更新 Teacher / Student 前台。`)) {
+        return;
+      }
+      collectFormIntoState();
+      deleteDishFromState(state, id);
+      saveCanteenStateAndSync(state);
+      renderAdminTables();
+      alert(`已刪除 Dish #${id}，並同步前台。`);
+    }
+
+    function deleteDrink(id) {
+      const drink = state.drinks.find(d => d.id === id);
+      if (!drink) return;
+      if (!confirm(`確定要刪除 Drink「${drink.name}」嗎？此操作會同步更新 Teacher / Student 前台。`)) {
+        return;
+      }
+      collectFormIntoState();
+      deleteDrinkFromState(state, id);
+      saveCanteenStateAndSync(state);
+      renderAdminTables();
+      alert(`已刪除 Drink #${id}，並同步前台。`);
+    }
+
+    renderAdminTables();
+  </script>
+</body>
+</html>
