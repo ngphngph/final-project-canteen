@@ -9,6 +9,8 @@ import com.bootcamp.restaurant.enums.PickupStatus;
 import com.bootcamp.restaurant.exception.ResourceNotFoundException;
 import com.bootcamp.restaurant.mapper.OrderMapper;
 import com.bootcamp.restaurant.model.OrderCreateReq;
+import com.bootcamp.restaurant.pickup.dto.PickupCreateRequest;
+import com.bootcamp.restaurant.pickup.service.MealPickupService;
 import com.bootcamp.restaurant.repository.OrderItemRepository;
 import com.bootcamp.restaurant.repository.OrderRepository;
 import com.bootcamp.restaurant.service.OrderService;
@@ -33,6 +35,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderMapper orderMapper;
+
+    // ⭐ 連接 Part 5：取餐核銷系統
+    @Autowired
+    private MealPickupService mealPickupService;
 
     @Override
     public List<OrderResp> getOrdersByUserId(Long userId) {
@@ -113,12 +119,45 @@ public class OrderServiceImpl implements OrderService {
     public OrderResp updateOrderStatus(Long orderId, String status) {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        OrderStatus newStatus;
         try {
-            order.setOrderStatus(OrderStatus.valueOf(status));
+            newStatus = OrderStatus.valueOf(status);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid order status: " + status);
         }
-        return orderMapper.map(orderRepository.save(order));
+
+        order.setOrderStatus(newStatus);
+        OrderEntity saved = orderRepository.save(order);
+
+        // ⭐ 連接 Part 5：付款成功後，為每個 OrderItem 建立取餐記錄
+        // DEPOSIT_PAID = 已付訂金，FULLY_PAID = 全額付清，兩個情況都要建立取餐記錄
+        if (newStatus == OrderStatus.DEPOSIT_PAID || newStatus == OrderStatus.FULLY_PAID) {
+            List<OrderItemEntity> items = orderItemRepository.findByOrderEntity_OrderId(orderId);
+            for (OrderItemEntity item : items) {
+
+                // 核銷碼 = 手機後4碼 + "-" + 訂單末3碼
+                // ⚠️ 注意：手機號碼需要同學1（User系統）提供
+                // 暫時用 userId 末4碼代替，等同學1做好再換
+                String phoneLast4 = String.format("%04d", order.getUserId() % 10000);
+                String orderLast3 = String.format("%03d", orderId % 1000);
+                String method = phoneLast4 + "-" + orderLast3;
+
+                PickupCreateRequest pickupReq = new PickupCreateRequest();
+                pickupReq.setItemId(item.getItemId());
+                pickupReq.setMethod(method);
+                // ⚠️ expectedTime 需要同學2（Menu系統）提供 supply_time
+                // 暫時設為訂單建立時間 + 2小時，等同學2做好再換
+                pickupReq.setExpectedTime(
+                    order.getCreatedAt().plusHours(2)
+                         .toInstant(java.time.ZoneOffset.UTC)
+                );
+
+                mealPickupService.createPickup(pickupReq);
+            }
+        }
+
+        return orderMapper.map(saved);
     }
 
     @Override
