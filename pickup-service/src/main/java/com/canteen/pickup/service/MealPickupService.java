@@ -5,6 +5,8 @@ import com.canteen.pickup.dto.PickupResponse;
 import com.canteen.pickup.dto.PickupVerifyRequest;
 import com.canteen.pickup.entity.MealPickup;
 import com.canteen.pickup.repository.MealPickupRepository;
+import com.canteen.pickup.websocket.PickupCallMessage;
+import com.canteen.pickup.websocket.PickupWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.util.List;
 public class MealPickupService {
 
     private final MealPickupRepository repository;
+    private final PickupWebSocketHandler webSocketHandler;
 
     // ── 建立取餐記錄（同學4訂單付款後 call 呢個）────────────────────────────
     // 同學4：當 Order 狀態係 Deposit_Paid 或 Fully_Paid，
@@ -56,6 +59,14 @@ public class MealPickupService {
         repository.save(pickup);
 
         return toResponse(pickup, "✅ 核銷成功");
+    }
+
+    // ── 廚房叫號：廣播取餐通知給所有大螢幕 ────────────────────────────────
+    public PickupResponse callPickup(Long pickupId) {
+        MealPickup pickup = repository.findById(pickupId)
+                .orElseThrow(() -> new IllegalArgumentException("找不到 pickupId: " + pickupId));
+        webSocketHandler.broadcast(PickupCallMessage.of(pickupId, pickup.getMethod()));
+        return toResponse(pickup, "叫號廣播已發送");
     }
 
     // ── 查詢所有逾時未取餐 ──────────────────────────────────────────────────

@@ -20,6 +20,7 @@ import com.canteen.demo_canteen.entity.Teacher;
 import com.canteen.demo_canteen.exception.BadRequestException;
 import com.canteen.demo_canteen.exception.ConflictException;
 import com.canteen.demo_canteen.exception.UnauthorizedException;
+import com.canteen.demo_canteen.util.JwtUtil;
 
 @Service
 public class UserService {
@@ -29,6 +30,9 @@ public class UserService {
 
     @Autowired
     private BaseUserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     private String normalizeRole(String role) {
         return role == null ? "" : role.trim().toUpperCase(Locale.ROOT);
@@ -126,8 +130,9 @@ public class UserService {
         if (!passwordEncoder.matches(password, user.getPasswordHash()))
             throw new UnauthorizedException("密碼錯誤");
 
+        String token = jwtUtil.generate(user.getId(), user.getRole());
         return new LoginResp(user.getId(), user.getRole(), user.getPhone(),
-                "登入成功！歡迎 " + user.getRole() + " 登入系統。");
+                "登入成功！歡迎 " + user.getRole() + " 登入系統。", token);
     }
 
     public LoginResp lookupByPhone(String phone) {

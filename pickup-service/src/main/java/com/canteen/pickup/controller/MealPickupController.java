@@ -67,4 +67,11 @@ public class MealPickupController {
     public ResponseEntity<PickupResponse> markNotified(@PathVariable Long pickupId) {
         return ResponseEntity.ok(service.markAdminNotified(pickupId));
     }
+
+    // POST /api/pickups/{pickupId}/call
+    // 廚房叫號：廣播取餐通知至所有大螢幕（WebSocket 推播）
+    @PostMapping("/{pickupId}/call")
+    public ResponseEntity<PickupResponse> call(@PathVariable Long pickupId) {
+        return ResponseEntity.ok(service.callPickup(pickupId));
+    }
 }

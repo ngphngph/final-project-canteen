@@ -51,6 +51,16 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(WalletServiceException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ErrorResp handleWalletService(WalletServiceException ex) {
+        return ErrorResp.builder()
+                .status(HttpStatus.BAD_GATEWAY.value())
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResp handleGeneral(RuntimeException ex) {
