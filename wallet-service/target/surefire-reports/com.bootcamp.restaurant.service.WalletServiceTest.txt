@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.bootcamp.restaurant.service.WalletServiceTest
--------------------------------------------------------------------------------
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.866 s -- in com.bootcamp.restaurant.service.WalletServiceTest

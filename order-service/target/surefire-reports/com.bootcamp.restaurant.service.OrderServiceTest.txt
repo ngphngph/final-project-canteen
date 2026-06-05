@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.bootcamp.restaurant.service.OrderServiceTest
--------------------------------------------------------------------------------
-Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.016 s -- in com.bootcamp.restaurant.service.OrderServiceTest
