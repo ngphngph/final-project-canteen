@@ -1,0 +1,117 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "123456"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 400m
+
+  login-service:
+    build: ./login-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/canteen_login
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: "123456"
+      JAVA_TOOL_OPTIONS: -Xmx160m -Xms64m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 280m
+
+  wallet-service:
+    build: ./wallet-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/restaurant_pos
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: "123456"
+      JAVA_TOOL_OPTIONS: -Xmx160m -Xms64m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 280m
+
+  order-service:
+    build: ./order-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/restaurant_pos
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: "123456"
+      JAVA_TOOL_OPTIONS: -Xmx160m -Xms64m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 280m
+
+  menu-service:
+    build: ./menu-service/alice
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/canteen_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: "123456"
+      JAVA_TOOL_OPTIONS: -Xmx160m -Xms64m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 280m
+
+  pickup-service:
+    build: ./pickup-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/canteen_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: "123456"
+      JAVA_TOOL_OPTIONS: -Xmx160m -Xms64m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 280m
+
+  nginx:
+    image: nginx:1.29
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./menu-service/alice/src/main/resources/static:/usr/share/nginx/html:ro
+    depends_on:
+      - login-service
+      - wallet-service
+      - order-service
+      - menu-service
+      - pickup-service
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

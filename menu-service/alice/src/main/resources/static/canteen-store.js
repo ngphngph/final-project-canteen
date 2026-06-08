@@ -4,10 +4,10 @@ const CANTEEN_IMAGE_STORE_KEY = "canteen_demo_images_v1";
 const CANTEEN_ORDERS_KEY = "canteen_demo_orders_v1";
 const CANTEEN_SESSION_KEY = "canteen_session";
 
-const LOGIN_BASE  = "http://localhost:8081";
-const ORDER_BASE  = "http://localhost:8084";
-const WALLET_BASE = "http://localhost:8082";
-const PICKUP_BASE = "http://localhost:8085";
+const LOGIN_BASE  = "/api/login";
+const ORDER_BASE  = "/api/order";
+const WALLET_BASE = "/api/wallet";
+const PICKUP_BASE = "/api/pickup";
 
 function getSession() {
   try {
