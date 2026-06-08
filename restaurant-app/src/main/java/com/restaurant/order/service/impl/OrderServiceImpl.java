@@ -36,6 +36,12 @@ public class OrderServiceImpl implements OrderService {
     private final PickupClient pickupClient;
 
     @Override
+    public List<OrderResp> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(orderMapper::map).collect(Collectors.toList());
+    }
+
+    @Override
     public List<OrderResp> getOrdersByUserId(Long userId) {
         return orderRepository.findByUserId(userId).stream()
                 .map(orderMapper::map).collect(Collectors.toList());

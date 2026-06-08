@@ -7,6 +7,7 @@ import com.restaurant.order.dto.OrderResp;
 import java.util.List;
 
 public interface OrderService {
+    List<OrderResp> getAllOrders();
     List<OrderResp> getOrdersByUserId(Long userId);
     OrderResp getOrderById(Long orderId);
     OrderResp createOrder(OrderCreateReq req);

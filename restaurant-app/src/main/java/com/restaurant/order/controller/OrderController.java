@@ -22,6 +22,11 @@ public class OrderController {
     private final OrderService orderService;
     private final WalletClient walletClient;   // Feign — calls WalletController via 127.0.0.1:8080
 
+    @GetMapping
+    public List<OrderResp> getAll() {
+        return orderService.getAllOrders();
+    }
+
     @GetMapping("/user/{userId}")
     public List<OrderResp> getByUser(@PathVariable Long userId) {
         return orderService.getOrdersByUserId(userId);
