@@ -1,6 +1,7 @@
 package com.restaurant.shared.exception;
 
 import com.stripe.exception.StripeException;
+import feign.FeignException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -65,6 +66,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorBody> illegalState(IllegalStateException ex) {
         return body(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // Feign — mirrors the downstream HTTP status back to the caller
+    @ExceptionHandler(FeignException.class)
+    public ResponseEntity<ErrorBody> feign(FeignException ex) {
+        HttpStatus status = HttpStatus.resolve(ex.status());
+        if (status == null) status = HttpStatus.BAD_GATEWAY;
+        String msg = ex.contentUTF8().isBlank() ? ex.getMessage() : ex.contentUTF8();
+        return body(status, msg);
     }
 
     // 502

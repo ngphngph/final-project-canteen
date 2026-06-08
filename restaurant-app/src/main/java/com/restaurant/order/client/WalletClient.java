@@ -21,4 +21,8 @@ public interface WalletClient {
     @PostMapping("/wallets/{walletId}/deduct")
     WalletTransactionClientResp deduct(@PathVariable Long walletId,
                                        @RequestBody WalletDeductReq req);
+
+    @PostMapping("/wallets/{walletId}/refund")
+    WalletTransactionClientResp refund(@PathVariable Long walletId,
+                                       @RequestBody WalletDeductReq req);
 }
