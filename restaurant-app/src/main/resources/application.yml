@@ -23,7 +23,6 @@ spring:
     resources:
       static-locations:
         - classpath:/static/
-        - file:../nginx/html/
   servlet:
     multipart:
       enabled: true
