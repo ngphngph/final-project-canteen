@@ -51,10 +51,28 @@
       </header>
 
     <main class="flex-1 p-5 space-y-5">
+
+      <!-- 管理員 API 憑證設定 -->
+      <section id="adminCredPanel" class="present-card p-4 border-2 border-amber-300 bg-amber-50">
+        <h2 class="font-semibold text-base text-amber-800 mb-2">🔐 管理員 API 憑證</h2>
+        <p class="text-sm text-amber-700 mb-3">輸入帳號密碼後，系統將從後端 DB 載入菜單並啟用新增／刪除功能。</p>
+        <div class="flex flex-wrap gap-3 items-end">
+          <label class="block text-sm">
+            <span class="text-slate-600">帳號</span>
+            <input id="adminUser" type="text" class="mt-1 border rounded px-2 py-1.5 w-36 bg-white" value="admin_user" />
+          </label>
+          <label class="block text-sm">
+            <span class="text-slate-600">密碼</span>
+            <input id="adminPass" type="password" class="mt-1 border rounded px-2 py-1.5 w-36 bg-white" placeholder="admin123" />
+          </label>
+          <button type="button" onclick="setAdminCredentials()" class="present-btn-primary px-5 py-2 text-sm self-end">設定並載入菜單</button>
+        </div>
+      </section>
+
       <section id="section-overview" class="present-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="font-semibold text-lg text-slate-800">菜單資料總儲存</h2>
-          <p class="text-sm text-slate-500">將目前所有菜單（Dish 與 Drink）資料儲存至系統，並同步 Student / Teacher 前台。</p>
+          <h2 class="font-semibold text-lg text-slate-800">菜單資料儲存至後端</h2>
+          <p class="text-sm text-slate-500">將目前表格中的名稱、價格、Special Request 儲存至後端 DB，各裝置即時生效。</p>
         </div>
         <button type="button" onclick="saveAllData()" class="present-btn-primary px-5 py-2.5 text-sm inline-flex items-center gap-2">
           💾 儲存全部資料
@@ -206,6 +224,64 @@
     </div>
   </div>
 
+  <!-- 新增 Dish Modal -->
+  <div id="createDishModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+      <h3 class="font-semibold text-lg mb-4">新增 Dish</h3>
+      <div class="space-y-3">
+        <label class="block text-sm"><span class="text-slate-600">名稱 *</span>
+          <input id="nd-name" class="mt-1 border rounded px-2 py-1.5 w-full" placeholder="例：叉燒飯" /></label>
+        <label class="block text-sm"><span class="text-slate-600">代碼（留空自動生成）</span>
+          <input id="nd-code" class="mt-1 border rounded px-2 py-1.5 w-full" placeholder="DISH001" /></label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-sm"><span class="text-slate-600">價格 ($) *</span>
+            <input id="nd-price" type="number" min="0" step="0.5" class="mt-1 border rounded px-2 py-1.5 w-full" value="60" /></label>
+          <label class="block text-sm"><span class="text-slate-600">初始庫存</span>
+            <input id="nd-stock" type="number" min="0" class="mt-1 border rounded px-2 py-1.5 w-full" value="50" /></label>
+        </div>
+        <label class="block text-sm"><span class="text-slate-600">供應日期（留空為今天）</span>
+          <input id="nd-date" type="date" class="mt-1 border rounded px-2 py-1.5 w-full" /></label>
+        <label class="block text-sm"><span class="text-slate-600">照片 *（jpg/png，建議 600–800px）</span>
+          <input id="nd-image" type="file" accept="image/*" class="mt-1 w-full text-sm" /></label>
+        <label class="block text-sm"><span class="text-slate-600">Special Request（逗號分隔，可留空）</span>
+          <input id="nd-options" class="mt-1 border rounded px-2 py-1.5 w-full" placeholder="不要辣, 少鹽" /></label>
+      </div>
+      <div class="mt-5 flex gap-2 justify-end">
+        <button type="button" onclick="document.getElementById('createDishModal').classList.add('hidden')"
+          class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">取消</button>
+        <button type="button" onclick="submitCreateDish()" class="present-btn-primary px-5 py-2 text-sm">建立 Dish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增 Drink Modal -->
+  <div id="createDrinkModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+      <h3 class="font-semibold text-lg mb-4">新增 Drink</h3>
+      <div class="space-y-3">
+        <label class="block text-sm"><span class="text-slate-600">名稱 *</span>
+          <input id="nk-name" class="mt-1 border rounded px-2 py-1.5 w-full" placeholder="例：港式奶茶" /></label>
+        <label class="block text-sm"><span class="text-slate-600">代碼（留空自動生成）</span>
+          <input id="nk-code" class="mt-1 border rounded px-2 py-1.5 w-full" placeholder="DRINK001" /></label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-sm"><span class="text-slate-600">價格 ($) *</span>
+            <input id="nk-price" type="number" min="0" step="0.5" class="mt-1 border rounded px-2 py-1.5 w-full" value="20" /></label>
+          <label class="block text-sm"><span class="text-slate-600">庫存數量</span>
+            <input id="nk-stock" type="number" min="0" class="mt-1 border rounded px-2 py-1.5 w-full" value="50" /></label>
+        </div>
+        <label class="block text-sm"><span class="text-slate-600">照片 *（jpg/png，建議 600–800px）</span>
+          <input id="nk-image" type="file" accept="image/*" class="mt-1 w-full text-sm" /></label>
+        <label class="block text-sm"><span class="text-slate-600">Special Request（逗號分隔，可留空）</span>
+          <input id="nk-options" class="mt-1 border rounded px-2 py-1.5 w-full" placeholder="熱, 凍, 少甜" /></label>
+      </div>
+      <div class="mt-5 flex gap-2 justify-end">
+        <button type="button" onclick="document.getElementById('createDrinkModal').classList.add('hidden')"
+          class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">取消</button>
+        <button type="button" onclick="submitCreateDrink()" class="present-btn-orange px-5 py-2 text-sm">建立 Drink</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/canteen-store.js"></script>
   <script>
     // ORDER_BASE, LOGIN_BASE, WALLET_BASE, PICKUP_BASE already defined in canteen-store.js
@@ -273,16 +349,20 @@
 
     async function applyImageFromFile(type, item, file) {
       if (!file || !item) return;
+      if (!adminUser) { alert("請先設定管理員帳號密碼"); return; }
+      const endpoint = type === "dish" ? `/api/dishes/${item.id}/image` : `/api/drinks/${item.id}/image`;
+      const fd = new FormData();
+      fd.append("image", file);
       try {
-        const result = await persistMenuItemImage(type, item.id, file);
-        applyUploadedImageToItem(item, result);
-        collectFormIntoState();
-        saveCanteenStateAndSync(state);
+        const res = await fetch(endpoint, { method: "POST", headers: adminHeaders(), body: fd });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); alert("照片上載失敗：" + (e.message || res.status)); return; }
+        const updated = await res.json();
+        item.imageUrl = updated.imageUrl || "";
+        item.image    = updated.imageUrl || "";
+        item.imageFileName = updated.imageUrl ? updated.imageUrl.split("/").pop() : "";
         renderAdminTables();
-        alert(`照片已上載並同步至 Student / Teacher（${file.name}）。`);
-      } catch (e) {
-        alert(e.message || "照片上載失敗");
-      }
+        alert(`照片已上載至後端（${file.name}）。`);
+      } catch (e) { alert("照片上載失敗：" + e.message); }
     }
 
     function setDishImage(id, input) {
@@ -333,73 +413,218 @@
       return state.drinks.length ? Math.max(...state.drinks.map(d => d.id)) + 1 : 101;
     }
 
-    function addDish() {
-      const dish = {
-        id: nextDishId(),
-        name: "新菜式",
-        price: 0,
-        balance: 0,
-        status: "SOLD_OUT",
-        image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
-        options: [],
-        imageFileName: ""
+    // ── Admin API 憑證 ──────────────────────────────────
+    let adminUser = "", adminPass = "";
+
+    function adminHeaders(extra) {
+      const h = extra ? { ...extra } : {};
+      if (adminUser && adminPass) {
+        h["Authorization"] = "Basic " + btoa(adminUser + ":" + adminPass);
+      }
+      return h;
+    }
+
+    function setAdminCredentials() {
+      const u = document.getElementById("adminUser").value.trim();
+      const p = document.getElementById("adminPass").value;
+      if (!u || !p) { alert("請填入帳號與密碼"); return; }
+      adminUser = u;
+      adminPass = p;
+      try { sessionStorage.setItem("_au", u); sessionStorage.setItem("_ap", p); } catch (_) {}
+      document.getElementById("adminCredPanel").classList.add("hidden");
+      loadMenuFromApi();
+    }
+
+    function apiToDish(d) {
+      return {
+        id: d.id,
+        name: d.name,
+        code: d.code || "",
+        price: Number(d.price) || 0,
+        balance: d.balance ?? 0,
+        status: d.status || "SOLD_OUT",
+        imageUrl: d.imageUrl || "",
+        image: d.imageUrl || "",
+        options: d.specialRequestOptions
+          ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
+          : [],
+        imageFileName: d.imageUrl ? d.imageUrl.split("/").pop() : ""
       };
-      state.dishes.push(dish);
-      saveCanteenState(state);
+    }
+
+    function apiToDrink(d) {
+      return {
+        id: d.id,
+        name: d.name,
+        code: d.code || "",
+        price: Number(d.price) || 0,
+        balance: d.balance ?? 0,
+        status: d.status || "ON_LIST",
+        imageUrl: d.imageUrl || "",
+        image: d.imageUrl || "",
+        options: d.specialRequestOptions
+          ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
+          : [],
+        imageFileName: d.imageUrl ? d.imageUrl.split("/").pop() : ""
+      };
+    }
+
+    async function loadMenuFromApi() {
+      const today = new Date().toISOString().slice(0, 10);
+      try {
+        const [dishRes, drinkRes] = await Promise.all([
+          fetch(`/api/dishes?date=${today}`, { headers: adminHeaders() }),
+          fetch(`/api/drinks`, { headers: adminHeaders() })
+        ]);
+        if (dishRes.ok) {
+          state.dishes = (await dishRes.json()).map(apiToDish);
+        }
+        if (drinkRes.ok) {
+          state.drinks = (await drinkRes.json()).map(apiToDrink);
+        }
+      } catch (e) {
+        console.warn("API 載入失敗，保留本機資料", e);
+      }
       renderAdminTables();
-      alert(`已新增 Dish #${dish.id}。`);
+    }
+
+    function addDish() {
+      if (!adminUser) { alert("請先設定管理員帳號密碼"); return; }
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById("nd-date").value = today;
+      document.getElementById("nd-name").value = "";
+      document.getElementById("nd-code").value = "";
+      document.getElementById("nd-price").value = "60";
+      document.getElementById("nd-stock").value = "50";
+      document.getElementById("nd-options").value = "";
+      document.getElementById("nd-image").value = "";
+      document.getElementById("createDishModal").classList.remove("hidden");
+    }
+
+    async function submitCreateDish() {
+      const name = document.getElementById("nd-name").value.trim();
+      const rawCode = document.getElementById("nd-code").value.trim();
+      const code = rawCode || name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10) || "DISH";
+      const price = Number(document.getElementById("nd-price").value) || 0;
+      const stock = Number(document.getElementById("nd-stock").value) || 0;
+      const date = document.getElementById("nd-date").value || new Date().toISOString().slice(0, 10);
+      const options = document.getElementById("nd-options").value.trim();
+      const imgInput = document.getElementById("nd-image");
+      if (!name) { alert("請填入菜式名稱"); return; }
+      if (!imgInput.files || !imgInput.files[0]) { alert("請選擇照片"); return; }
+      const data = { name, code, price, initialStock: stock, preparationTime: 10, menuDate: date,
+        specialRequestOptions: options || null };
+      const fd = new FormData();
+      fd.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
+      fd.append("image", imgInput.files[0]);
+      try {
+        const res = await fetch("/api/dishes", { method: "POST", headers: adminHeaders(), body: fd });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); alert("建立失敗：" + (e.message || res.status)); return; }
+        document.getElementById("createDishModal").classList.add("hidden");
+        await loadMenuFromApi();
+        alert("已成功新增 Dish！");
+      } catch (e) { alert("建立失敗：" + e.message); }
     }
 
     function addDrink() {
-      const drink = {
-        id: nextDrinkId(),
-        name: "新飲品",
-        price: 0,
-        status: "ON_LIST",
-        options: [],
-        imageFileName: ""
-      };
-      state.drinks.push(drink);
-      saveCanteenState(state);
-      renderAdminTables();
-      alert(`已新增 Drink #${drink.id}。`);
+      if (!adminUser) { alert("請先設定管理員帳號密碼"); return; }
+      document.getElementById("nk-name").value = "";
+      document.getElementById("nk-code").value = "";
+      document.getElementById("nk-price").value = "20";
+      document.getElementById("nk-stock").value = "50";
+      document.getElementById("nk-options").value = "";
+      document.getElementById("nk-image").value = "";
+      document.getElementById("createDrinkModal").classList.remove("hidden");
     }
 
-    function saveAllData() {
-      collectFormIntoState();
+    async function submitCreateDrink() {
+      const name = document.getElementById("nk-name").value.trim();
+      const rawCode = document.getElementById("nk-code").value.trim();
+      const code = rawCode || name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10) || "DRINK";
+      const price = Number(document.getElementById("nk-price").value) || 0;
+      const balance = Number(document.getElementById("nk-stock").value) || 0;
+      const options = document.getElementById("nk-options").value.trim();
+      const imgInput = document.getElementById("nk-image");
+      if (!name) { alert("請填入飲品名稱"); return; }
+      if (!imgInput.files || !imgInput.files[0]) { alert("請選擇照片"); return; }
+      const data = { name, code, price, balance, specialRequestOptions: options || null };
+      const fd = new FormData();
+      fd.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
+      fd.append("image", imgInput.files[0]);
       try {
-        saveCanteenStateAndSync(state);
-        renderAdminTables();
-        alert("已完成儲存：已清除並重新同步 Teacher / Student 前台菜單（含照片）。");
-      } catch (e) {
-        alert(e.message || "儲存失敗");
+        const res = await fetch("/api/drinks", { method: "POST", headers: adminHeaders(), body: fd });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); alert("建立失敗：" + (e.message || res.status)); return; }
+        document.getElementById("createDrinkModal").classList.add("hidden");
+        await loadMenuFromApi();
+        alert("已成功新增 Drink！");
+      } catch (e) { alert("建立失敗：" + e.message); }
+    }
+
+    async function saveAllData() {
+      if (!adminUser) { alert("請先設定管理員帳號密碼"); return; }
+      collectFormIntoState();
+      const errors = [];
+      for (const d of state.dishes) {
+        try {
+          const r1 = await fetch(`/api/dishes/${d.id}/basic-info`, {
+            method: "PATCH",
+            headers: adminHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ name: d.name, price: d.price })
+          });
+          if (!r1.ok) errors.push(`Dish #${d.id} 基本資料：HTTP ${r1.status}`);
+          const optStr = (d.options || []).join(", ");
+          if (optStr) {
+            await fetch(`/api/dishes/${d.id}/special-request-options`, {
+              method: "PATCH",
+              headers: adminHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ specialRequestOptions: optStr })
+            });
+          }
+        } catch (e) { errors.push(`Dish #${d.id}：${e.message}`); }
+      }
+      for (const d of state.drinks) {
+        try {
+          const code = d.code || d.name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10) || "DRINK";
+          const data = { name: d.name, code, price: d.price, balance: d.balance ?? 0,
+            specialRequestOptions: (d.options || []).join(", ") || null };
+          const fd = new FormData();
+          fd.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
+          const r = await fetch(`/api/drinks/${d.id}`, { method: "PUT", headers: adminHeaders(), body: fd });
+          if (!r.ok) errors.push(`Drink #${d.id}：HTTP ${r.status}`);
+        } catch (e) { errors.push(`Drink #${d.id}：${e.message}`); }
+      }
+      await loadMenuFromApi();
+      if (errors.length) {
+        alert("部分儲存失敗：\n" + errors.join("\n"));
+      } else {
+        alert("✅ 所有菜單已儲存至後端 DB！各裝置重新整理後即可看到更新。");
       }
     }
 
-    function deleteDish(id) {
+    async function deleteDish(id) {
+      if (!adminUser) { alert("請先設定管理員帳號密碼"); return; }
       const dish = state.dishes.find(d => d.id === id);
       if (!dish) return;
-      if (!confirm(`確定要刪除 Dish「${dish.name}」嗎？此操作會同步更新 Teacher / Student 前台。`)) {
-        return;
-      }
-      collectFormIntoState();
-      deleteDishFromState(state, id);
-      saveCanteenStateAndSync(state);
-      renderAdminTables();
-      alert(`已刪除 Dish #${id}，並同步前台。`);
+      if (!confirm(`確定要從後端刪除 Dish「${dish.name}」嗎？此操作不可還原。`)) return;
+      try {
+        const res = await fetch(`/api/dishes/${id}`, { method: "DELETE", headers: adminHeaders() });
+        if (!res.ok && res.status !== 204) { alert("刪除失敗：HTTP " + res.status); return; }
+        await loadMenuFromApi();
+        alert(`已刪除 Dish「${dish.name}」。`);
+      } catch (e) { alert("刪除失敗：" + e.message); }
     }
 
-    function deleteDrink(id) {
+    async function deleteDrink(id) {
+      if (!adminUser) { alert("請先設定管理員帳號密碼"); return; }
       const drink = state.drinks.find(d => d.id === id);
       if (!drink) return;
-      if (!confirm(`確定要刪除 Drink「${drink.name}」嗎？此操作會同步更新 Teacher / Student 前台。`)) {
-        return;
-      }
-      collectFormIntoState();
-      deleteDrinkFromState(state, id);
-      saveCanteenStateAndSync(state);
-      renderAdminTables();
-      alert(`已刪除 Drink #${id}，並同步前台。`);
+      if (!confirm(`確定要從後端刪除 Drink「${drink.name}」嗎？此操作不可還原。`)) return;
+      try {
+        const res = await fetch(`/api/drinks/${id}`, { method: "DELETE", headers: adminHeaders() });
+        if (!res.ok && res.status !== 204) { alert("刪除失敗：HTTP " + res.status); return; }
+        await loadMenuFromApi();
+        alert(`已刪除 Drink「${drink.name}」。`);
+      } catch (e) { alert("刪除失敗：" + e.message); }
     }
 
     // ── 訂購時段設定 ───────────────────────────────
@@ -558,7 +783,6 @@
     }
 
     function refreshAdminDashboard() {
-      rehydrateMenuImagesFromStore(state);
       renderAdminTables();
       renderOrderWindowForm();
       renderSalesTable();
@@ -575,6 +799,20 @@
         renderOrderWindowForm();
       }
     });
+
+    // 嘗試從 sessionStorage 還原憑證（同一瀏覽器分頁有效）
+    try {
+      const su = sessionStorage.getItem("_au");
+      const sp = sessionStorage.getItem("_ap");
+      if (su && sp) {
+        adminUser = su;
+        adminPass = sp;
+        document.getElementById("adminUser").value = su;
+        document.getElementById("adminPass").value = sp;
+        document.getElementById("adminCredPanel").classList.add("hidden");
+        loadMenuFromApi();
+      }
+    } catch (_) {}
 
     renderAdminTables();
     renderOrderWindowForm();

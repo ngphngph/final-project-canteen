@@ -231,19 +231,70 @@
     let dishes = [];
     let drinks = [];
 
-    function reloadPublishedMenu() {
-      const published = loadFrontendMenu(frontendRole);
-      dishes = published.dishes;
-      drinks = published.drinks;
+    async function reloadPublishedMenu() {
+      try {
+        const [dishRes, drinkRes] = await Promise.all([
+          fetch("/api/dishes/today"),
+          fetch("/api/drinks/today")
+        ]);
+        if (dishRes.ok && drinkRes.ok) {
+          const apiDishes = await dishRes.json();
+          const apiDrinks = await drinkRes.json();
+          dishes = apiDishes.map(d => ({
+            id: d.id,
+            name: d.name,
+            price: Number(d.price) || 0,
+            balance: d.balance ?? 0,
+            status: d.status || "SOLD_OUT",
+            image: d.imageUrl || "",
+            imageUrl: d.imageUrl || "",
+            options: d.specialRequestOptions
+              ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
+              : []
+          }));
+          drinks = apiDrinks.map(d => ({
+            id: d.id,
+            name: d.name,
+            price: Number(d.price) || 0,
+            balance: d.balance ?? 0,
+            status: d.status || "ON_LIST",
+            image: d.imageUrl || "",
+            imageUrl: d.imageUrl || "",
+            options: d.specialRequestOptions
+              ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
+              : []
+          }));
+        } else if (dishRes.status === 403 || drinkRes.status === 403) {
+          // order window closed — show empty menu
+          dishes = [];
+          drinks = [];
+        } else {
+          const published = loadFrontendMenu(frontendRole);
+          dishes = published.dishes;
+          drinks = published.drinks;
+        }
+      } catch (_) {
+        const published = loadFrontendMenu(frontendRole);
+        dishes = published.dishes;
+        drinks = published.drinks;
+      }
       renderDishes();
       renderDrinks();
     }
 
-    // 依 Admin 設定動態顯示訂購時段，並提示是否在可下單時間
-    function updateOrderWindowBadge() {
+    // 依後端設定動態顯示訂購時段
+    async function updateOrderWindowBadge() {
       const badge = document.getElementById("periodBadge");
       if (!badge) return;
-      const cfg = loadOrderWindow();
+      let cfg;
+      try {
+        const res = await fetch("/api/menu/order-window");
+        if (res.ok) {
+          cfg = await res.json();
+          saveOrderWindow(cfg);
+        }
+      } catch (_) {}
+      if (!cfg) cfg = loadOrderWindow();
       const open = !cfg.enforced || isOrderWindowOpen();
       const validSlots = (cfg.slots || []).filter(s => s && s.start && s.end);
       const slotsText = validSlots.length

@@ -64,7 +64,6 @@ public class DrinkController {
     }
 
     @GetMapping("/today")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN_USER', 'KITCHEN_USER')")
     public List<DrinkResponse> getTodayForClient() {
         return drinkService.getTodayForClient();
     }

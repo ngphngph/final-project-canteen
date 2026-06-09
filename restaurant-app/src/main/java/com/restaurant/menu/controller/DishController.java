@@ -94,7 +94,6 @@ public class DishController {
     }
 
     @GetMapping("/today")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN_USER', 'KITCHEN_USER')")
     public List<DishResponse> getTodayForClient() {
         return dishService.getTodayForClient();
     }
