@@ -1,5 +1,6 @@
 package com.restaurant.menu.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Random;
 
+@Slf4j
 @Service
 public class R2ImageService implements ImageService {
 
@@ -30,6 +32,8 @@ public class R2ImageService implements ImageService {
 
         this.bucket    = bucket;
         this.publicUrl = publicUrl;
+        log.info("R2 config — endpoint={} bucket={} accessKeyLen={} secretKeyLen={}",
+                endpoint, bucket, accessKey.length(), secretKey.length());
         this.s3 = S3Client.builder()
                 .region(Region.of("auto"))
                 .endpointOverride(URI.create(endpoint))
