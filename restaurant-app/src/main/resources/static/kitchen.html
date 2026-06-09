@@ -260,12 +260,13 @@
     }
 
     function orderStatusBadge(status) {
-      if (status === "READY")      return '<span class="present-badge-supply">已出餐</span>';
-      if (status === "COMPLETED")  return '<span class="present-badge-supply">已出餐</span>';
-      if (status === "PICKED_UP")  return '<span class="text-xs px-2 py-0.5 rounded bg-blue-900 text-blue-300">已取餐</span>';
-      if (status === "FULLY_PAID") return '<span class="text-xs px-2 py-0.5 rounded bg-yellow-900 text-yellow-300">已付款</span>';
-      if (status === "DEPOSIT_PAID") return '<span class="text-xs px-2 py-0.5 rounded bg-yellow-900 text-yellow-300">已付訂金</span>';
-      return '<span class="present-badge-sold">待處理</span>';
+      const map = {
+        PENDING_PAY:  '<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300">待付款</span>',
+        DEPOSIT_PAID: '<span class="text-xs px-2 py-0.5 rounded bg-amber-900 text-amber-300">已付訂金・備餐中</span>',
+        FULLY_PAID:   '<span class="text-xs px-2 py-0.5 rounded bg-yellow-900 text-yellow-200">已全額付款・備餐中</span>',
+        COMPLETE:     '<span class="text-xs px-2 py-0.5 rounded bg-emerald-900 text-emerald-300">已完成出餐</span>',
+      };
+      return map[status] || `<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">${status}</span>`;
     }
 
     function getMenuItemName(menuId) {
