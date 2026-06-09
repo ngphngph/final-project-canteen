@@ -33,8 +33,10 @@ public class R2ImageService implements ImageService {
 
         this.bucket    = bucket;
         this.publicUrl = publicUrl;
-        log.info("R2 config — endpoint={} bucket={} accessKeyLen={} secretKeyLen={}",
-                endpoint, bucket, accessKey.length(), secretKey.length());
+        log.info("R2 config — endpoint={} bucket={} accessKeyLen={} accessKeyPrefix={} secretKeyLen={}",
+                endpoint, bucket, accessKey.length(),
+                accessKey.substring(0, Math.min(4, accessKey.length())),
+                secretKey.length());
         this.s3 = S3Client.builder()
                 .region(Region.of("auto"))
                 .endpointOverride(URI.create(endpoint))
