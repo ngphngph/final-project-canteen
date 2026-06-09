@@ -403,14 +403,13 @@
     }
 
     // ── 訂購時段設定 ───────────────────────────────
-    function renderOrderWindowForm() {
-      const cfg = loadOrderWindow();
+    function _applyOrderWindowCfg(cfg) {
       const slots = cfg.slots || [];
       document.getElementById("orderWindowStart1").value = (slots[0] || {}).start || "";
       document.getElementById("orderWindowEnd1").value   = (slots[0] || {}).end   || "";
       document.getElementById("orderWindowStart2").value = (slots[1] || {}).start || "";
       document.getElementById("orderWindowEnd2").value   = (slots[1] || {}).end   || "";
-      document.getElementById("orderWindowZone").value = cfg.zone;
+      document.getElementById("orderWindowZone").value = cfg.zone || "Asia/Hong_Kong";
       document.getElementById("orderWindowEnforced").checked = Boolean(cfg.enforced);
       const slotsText = slots.map(s => `${s.start}-${s.end}`).join("、");
       const badge = document.getElementById("orderWindowCurrent");
@@ -420,7 +419,20 @@
         : "text-sm px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200";
     }
 
-    function saveOrderWindowSettings() {
+    async function renderOrderWindowForm() {
+      try {
+        const res = await fetch(`/api/menu/order-window`);
+        if (res.ok) {
+          const cfg = await res.json();
+          saveOrderWindow(cfg);
+          _applyOrderWindowCfg(cfg);
+          return;
+        }
+      } catch (_) {}
+      _applyOrderWindowCfg(loadOrderWindow());
+    }
+
+    async function saveOrderWindowSettings() {
       const s1 = document.getElementById("orderWindowStart1").value;
       const e1 = document.getElementById("orderWindowEnd1").value;
       const s2 = document.getElementById("orderWindowStart2").value;
@@ -432,16 +444,43 @@
       if (s2 && e2 && parseTimeToMinutes(s2) >= parseTimeToMinutes(e2)) { alert("時段二：結束時間必須晚於開始時間。"); return; }
       const slots = [{ start: s1, end: e1 }];
       if (s2 && e2) slots.push({ start: s2, end: e2 });
-      saveOrderWindow({ slots, zone, enforced });
-      renderOrderWindowForm();
-      const slotsText = slots.map(s => `${s.start}-${s.end}`).join(" 及 ");
-      alert(`訂購時段已更新為 ${slotsText}（${enforced ? "已啟用" : "未啟用"}）。`);
+      try {
+        const res = await fetch(`/api/menu/order-window`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slots, zone, enforced })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const updated = await res.json();
+        saveOrderWindow(updated);
+        _applyOrderWindowCfg(updated);
+        const slotsText = slots.map(s => `${s.start}-${s.end}`).join(" 及 ");
+        alert(`✅ 訂購時段已儲存至伺服器：${slotsText}（${enforced ? "已啟用" : "未啟用"}）`);
+      } catch (e) {
+        alert(`❌ 儲存失敗（${e.message}），設定僅暫存於本機。`);
+        saveOrderWindow({ slots, zone, enforced });
+        _applyOrderWindowCfg({ slots, zone, enforced });
+      }
     }
 
-    function resetOrderWindowSettings() {
-      saveOrderWindow({ slots: [{ start: "11:00", end: "12:00" }, { start: "13:00", end: "14:30" }], zone: "Asia/Hong_Kong", enforced: true });
-      renderOrderWindowForm();
-      alert("已回復預設訂購時段：11:00-12:00 及 13:00-14:30（已啟用）。");
+    async function resetOrderWindowSettings() {
+      const defaults = { slots: [{ start: "11:00", end: "14:30" }], zone: "Asia/Hong_Kong", enforced: true };
+      try {
+        const res = await fetch(`/api/menu/order-window`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(defaults)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const updated = await res.json();
+        saveOrderWindow(updated);
+        _applyOrderWindowCfg(updated);
+        alert("已回復預設訂購時段：11:00-14:30（已啟用）。");
+      } catch (e) {
+        saveOrderWindow(defaults);
+        _applyOrderWindowCfg(defaults);
+        alert("已回復預設（僅暫存於本機）。");
+      }
     }
 
     // ── 訂單管理：Dish 銷量（依日期分組）──────────────
