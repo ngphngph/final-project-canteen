@@ -233,6 +233,11 @@
 
     // menuFetched = true once API data is in dishes/drinks; reset when window closes
     let menuFetched = false;
+    let lastDishesHash = "";
+    let lastDrinksHash = "";
+    function hashItems(items) {
+      return items.map(i => `${i.id}:${i.balance}:${i.status}:${i.price}`).join("|");
+    }
 
     // Fetch from API and populate dishes/drinks — called only on first load and background refresh
     async function fetchMenuFromApi() {
@@ -475,10 +480,13 @@
 
     // 渲染 Dish 卡片
     function renderDishes() {
+      const hash = hashItems(dishes);
+      if (hash === lastDishesHash) return;
+      lastDishesHash = hash;
       const el = document.getElementById("dishList");
       el.innerHTML = dishes.map(d => `
         <div class="present-menu-card text-center ${d.status === "SOLD_OUT" ? "opacity-70" : ""}">
-          <img src="${resolveItemImage(d)}" alt="${d.name}" class="w-full aspect-square object-cover" />
+          <img src="${resolveItemImage(d)}" alt="${d.name}" class="w-full aspect-square object-cover" style="opacity:0;transition:opacity 0.3s" onload="this.style.opacity='1'" />
           <div class="p-2 space-y-1.5">
             <h3 class="font-semibold text-sm leading-tight line-clamp-2 text-slate-800">${d.name}</h3>
             <div class="flex justify-center">${statusBadge(d.status)}</div>
@@ -506,10 +514,13 @@
 
     // 渲染 Drink 卡片（Drink 沒有存貨限制）
     function renderDrinks() {
+      const hash = hashItems(drinks);
+      if (hash === lastDrinksHash) return;
+      lastDrinksHash = hash;
       const el = document.getElementById("drinkList");
       el.innerHTML = drinks.map(d => `
         <div class="present-menu-card text-center">
-          <img src="${resolveItemImage(d)}" alt="${d.name}" class="w-full aspect-square object-cover" />
+          <img src="${resolveItemImage(d)}" alt="${d.name}" class="w-full aspect-square object-cover" style="opacity:0;transition:opacity 0.3s" onload="this.style.opacity='1'" />
           <div class="p-2 space-y-1.5">
             <h3 class="font-semibold text-sm leading-tight line-clamp-2 text-slate-800">${d.name}</h3>
             <p class="text-base text-slate-700 font-semibold">$${d.price}</p>

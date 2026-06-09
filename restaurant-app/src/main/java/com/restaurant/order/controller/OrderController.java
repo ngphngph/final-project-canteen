@@ -6,6 +6,7 @@ import com.restaurant.order.client.dto.WalletDeductReq;
 import com.restaurant.order.dto.OrderCreateReq;
 import com.restaurant.order.dto.OrderItemResp;
 import com.restaurant.order.dto.OrderResp;
+import com.restaurant.order.dto.OrderWithItemsResp;
 import com.restaurant.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,11 @@ public class OrderController {
     @GetMapping
     public List<OrderResp> getAll() {
         return orderService.getAllOrders();
+    }
+
+    @GetMapping("/today")
+    public List<OrderWithItemsResp> getToday() {
+        return orderService.getTodayOrdersWithItems();
     }
 
     @GetMapping("/user/{userId}")

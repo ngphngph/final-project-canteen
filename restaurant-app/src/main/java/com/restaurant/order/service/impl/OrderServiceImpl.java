@@ -5,6 +5,7 @@ import com.restaurant.order.client.dto.PickupCreateReq;
 import com.restaurant.order.dto.OrderCreateReq;
 import com.restaurant.order.dto.OrderItemResp;
 import com.restaurant.order.dto.OrderResp;
+import com.restaurant.order.dto.OrderWithItemsResp;
 import com.restaurant.order.entity.OrderEntity;
 import com.restaurant.order.entity.OrderItemEntity;
 import com.restaurant.order.enums.OrderStatus;
@@ -20,10 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -134,5 +137,29 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderItemResp> getOrderItems(Long orderId) {
         return orderItemRepository.findByOrderEntity_OrderId(orderId).stream()
                 .map(orderMapper::map).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<OrderWithItemsResp> getTodayOrdersWithItems() {
+        LocalDateTime start = LocalDate.now().atStartOfDay();
+        LocalDateTime end = start.plusDays(1);
+        List<OrderEntity> orders = orderRepository.findByCreatedAtBetween(start, end);
+        if (orders.isEmpty()) return List.of();
+
+        List<Long> orderIds = orders.stream().map(OrderEntity::getOrderId).toList();
+        Map<Long, List<OrderItemResp>> itemsByOrder = orderItemRepository
+                .findByOrderEntity_OrderIdIn(orderIds).stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getOrderEntity().getOrderId(),
+                        Collectors.mapping(orderMapper::map, Collectors.toList())));
+
+        return orders.stream()
+                .map(o -> new OrderWithItemsResp(
+                        o.getOrderId(), o.getUserId(), o.getTotalAmt(), o.getTotalQty(),
+                        o.getDepositAmt(),
+                        o.getOrderStatus() != null ? o.getOrderStatus().name() : null,
+                        o.getCreatedAt(),
+                        itemsByOrder.getOrDefault(o.getOrderId(), List.of())))
+                .collect(Collectors.toList());
     }
 }

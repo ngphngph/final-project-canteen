@@ -31,6 +31,10 @@ spring:
 
 server:
   port: ${PORT:8080}
+  tomcat:
+    threads:
+      max: 40
+      min-spare: 5
 
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:sk_test_YOUR_KEY_HERE}
