@@ -53,11 +53,13 @@ canteen:
     zone: "Asia/Hong_Kong"
   scheduler:
     daily-reset-cron: "0 0 0 * * *"
-  image:
-    upload-dir: ${IMAGE_UPLOAD_DIR:uploads/menu}
-    max-bytes: 5242880
-    min-pixel: 600
-    max-pixel: 800
+
+r2:
+  access-key: ${R2_ACCESS_KEY:your_access_key}
+  secret-key: ${R2_SECRET_KEY:your_secret_key}
+  endpoint: ${R2_ENDPOINT:https://103c8d50d55f9c4635707fae11f3cc77.r2.cloudflarestorage.com}
+  bucket: ${R2_BUCKET:canteendb}
+  public-url: ${R2_PUBLIC_URL:https://pub-e47315ff76f145eeae9e5a2f8486bea8.r2.dev}
 
 security:
   admin:

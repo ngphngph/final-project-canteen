@@ -22,7 +22,7 @@
         <spring-cloud.version>2024.0.1</spring-cloud.version>
         <stripe.version>32.1.0</stripe.version>
         <jjwt.version>0.12.3</jjwt.version>
-        <thumbnailator.version>0.4.20</thumbnailator.version>
+        <awssdk.version>2.25.0</awssdk.version>
     </properties>
 
     <!-- Spring Cloud BOM — required for OpenFeign -->
@@ -113,11 +113,11 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ── Image processing (menu thumbnail upload) ─────────── -->
+        <!-- ── AWS SDK S3 (Cloudflare R2 image upload) ─────────── -->
         <dependency>
-            <groupId>net.coobird</groupId>
-            <artifactId>thumbnailator</artifactId>
-            <version>${thumbnailator.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${awssdk.version}</version>
         </dependency>
 
         <!-- ── Cache (Caffeine local — no Redis, 2 GB RAM constraint) -->
