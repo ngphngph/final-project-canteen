@@ -409,8 +409,8 @@
     </div>
   </div>
 
-  <!-- ============== 三、三大關鍵取捨 ============== -->
-  <h2>三、三大關鍵取捨</h2>
+  <!-- ============== 三、四大關鍵取捨 ============== -->
+  <h2>三、四大關鍵取捨</h2>
 
   <h3>3.1 微服務 → Modular Monolith</h3>
   <div class="vs-grid">
@@ -514,6 +514,38 @@
 5. 前端 GET /wallets/{walletId}/topup/verify?sessionId=xxx
 6. 後端與 Stripe API 對帳、入賬 wallet、標記 SUCCEEDED
 7. 回 {status, walletBalance, message}</pre>
+
+  <h3>3.4 Server-side Cart → Frontend localStorage Cart（購物車設計）</h3>
+  <div class="vs-grid">
+    <div class="vs-col vs-bad">
+      <h4>⚠ Demo 方案：Server-side Cart（DB 持久化）</h4>
+      <ul>
+        <li>需建立 <code>carts</code> + <code>cart_items</code> 兩張新表</li>
+        <li>CartService 必須 Feign 呼叫 menu module 取得真實價格（Demo 原碼硬碼 $40，無法用）</li>
+        <li>deposit 計算有 bug：<code>finalTotal = baseTotal + depositAmt</code>（等於多收 $50）</li>
+        <li>認證改用 <code>X-User-Id</code> header，與現行 Spring Security HTTP Basic 不符</li>
+        <li>優點：換裝置 / 重開瀏覽器後仍可恢復購物車內容</li>
+      </ul>
+    </div>
+    <div class="vs-col vs-good">
+      <h4>✅ 現行方案：Frontend localStorage Cart</h4>
+      <ul>
+        <li>購物車存於瀏覽器 <code>localStorage</code>，<strong>0 個新 DB 表</strong></li>
+        <li>價格在結帳時由 menu API 即時取得，不硬碼</li>
+        <li><code>depositAmt</code> 正確語意：totalAmt 的<strong>先付部分</strong>，非額外加項</li>
+        <li>結帳時直接送 <code>POST /orders</code>，流程最短</li>
+        <li>校園 POS 單一餐期、當場結帳，無需跨裝置恢復</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="info">
+    <strong>決策根據：</strong>
+    校園餐廳的使用場景是「坐下 → 點餐 → 當場結帳」，不存在「隔天繼續結帳」或「換手機繼續」的需求。
+    Server-side Cart 的唯一優勢（跨裝置 / 跨 session 恢復）在本場景中完全用不到，
+    反而帶來 2 張新表、Feign 跨模組取價、以及 Demo 原碼中兩個需修正的 bug（價格硬碼 + deposit 邏輯錯誤）。
+    現行 Frontend Cart 符合「<strong>夠用就好、不過度設計</strong>」的 MVP 原則。
+  </div>
 
   <!-- ============== 四、雲端與本地的分工 ============== -->
   <h2>四、雲端（Cloud）與本地（On-Premise）分工</h2>
