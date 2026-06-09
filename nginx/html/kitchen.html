@@ -298,15 +298,27 @@
     }
 
     function renderSalesReport() {
-      const orders = getTodayOrders();
-      const report = buildTodaySalesReport(orders, state);
       const el = document.getElementById("salesReport");
+      if (!todayOrders.length) {
+        el.innerHTML = '<p class="text-sm text-slate-500 col-span-full">今日暫無訂單數據</p>';
+        return;
+      }
+      const total     = todayOrders.length;
+      const completed = todayOrders.filter(o => ["COMPLETE","READY","COMPLETED"].includes(o.orderStatus)).length;
+      const pending   = total - completed;
+      const revenue   = todayOrders.reduce((s, o) => s + Number(o.totalAmt || 0), 0);
+      const dishCount = {};
+      todayOrders.forEach(o => (o.items || []).forEach(i => {
+        const name = getMenuItemName(i.menuId);
+        dishCount[name] = (dishCount[name] || 0) + (i.quantity || 1);
+      }));
+      const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
       el.innerHTML = `
-        <div class="stat-card"><p>總單數</p><p>${report.totalOrders}</p></div>
-        <div class="stat-card"><p>已完成</p><p class="text-emerald-400">${report.completedOrders}</p></div>
-        <div class="stat-card"><p>待處理</p><p class="text-orange-400">${report.pendingOrders}</p></div>
-        <div class="stat-card"><p>今日營業額</p><p>$${report.revenue}</p></div>
-        <div class="stat-card sm:col-span-2 lg:col-span-1"><p>最熱賣 Dish</p><p class="text-base">${report.topDish}</p></div>
+        <div class="stat-card"><p>總單數</p><p>${total}</p></div>
+        <div class="stat-card"><p>已完成</p><p class="text-emerald-400">${completed}</p></div>
+        <div class="stat-card"><p>待處理</p><p class="text-orange-400">${pending}</p></div>
+        <div class="stat-card"><p>今日營業額</p><p>$${revenue}</p></div>
+        <div class="stat-card sm:col-span-2 lg:col-span-1"><p>最熱賣 Dish</p><p class="text-base">${topDish}</p></div>
       `;
     }
 
@@ -327,99 +339,60 @@
       return d.toLocaleTimeString("zh-HK", { hour: "2-digit", minute: "2-digit", hour12: false });
     }
 
-    function buildOrderRows(allOrders) {
-      if (!allOrders.length) return '<p class="p-6 text-sm text-slate-500 text-center">尚無訂單記錄</p>';
-      return allOrders.map(o => {
-        const done = ["COMPLETED","READY","PICKED_UP"].includes(o.status);
-        const optionsLines = (o.items || [])
-          .filter(i => i.specialRequestOptions && i.specialRequestOptions.length)
-          .map(i => `<p class="text-xs text-slate-500">${i.name}：${i.specialRequestOptions.join(", ")}</p>`)
-          .join("");
-        const phoneLast4 = o.phone ? o.phone.slice(-4)
-          : o.userId ? String(o.userId % 10000).padStart(4,"0")
-          : "GUST";
-        const orderLast3 = String((o.backendOrderId || o.id) % 1000).padStart(3,"0");
+    // ── 今日訂單（純 API）──────────────────────────────────
+    let todayOrders = []; // populated by renderOrderList; shared with renderSalesReport / resolvePickupCode
+
+    function buildOrderRows(orders) {
+      if (!orders.length) return '<p class="p-6 text-sm text-slate-500 text-center">今日尚無訂單</p>';
+      return orders.map(o => {
+        const status   = o.orderStatus;
+        const active   = ["PENDING_PAY","DEPOSIT_PAID","FULLY_PAID"].includes(status);
+        const phoneLast4 = o.userId ? String(o.userId % 10000).padStart(4, "0") : "GUST";
+        const orderLast3 = String(o.orderId % 1000).padStart(3, "0");
         const pickupCode = `${phoneLast4}-${orderLast3}`;
-        const roleLabel = o.role === "teacher" ? "TEACHER" : o.role === "student" ? "STUDENT" : "GUEST";
-        const itemSummary = (o.items || []).map(i => `${i.name || getMenuItemName(i.id)} x${i.quantity || 1}`).join("、") || "—";
+        const itemSummary = (o.items || [])
+          .map(i => `${getMenuItemName(i.menuId)} x${i.quantity || 1}`)
+          .join("、") || "—";
+        const notesLines = (o.items || [])
+          .filter(i => i.specialNote)
+          .map(i => `<p class="text-xs text-slate-500">${getMenuItemName(i.menuId)}：${i.specialNote}</p>`)
+          .join("");
         return `
           <div class="p-4 flex flex-wrap gap-3 justify-between items-start hover:bg-slate-800/50">
             <div class="space-y-1">
               <div class="flex items-center gap-3 flex-wrap">
-                <p class="font-medium text-white">訂單 #${o.backendOrderId || String(o.id).slice(-6)}</p>
+                <p class="font-medium text-white">訂單 #${o.orderId}</p>
                 <span class="text-xs font-mono bg-slate-700 text-amber-300 px-2 py-0.5 rounded">取餐碼 ${pickupCode}</span>
               </div>
-              <p class="text-xs text-slate-400">${roleLabel} · $${o.total || o.totalAmt || 0} · ${fmtTime(o.createdAt)}${o.phone ? ` · 📞 ${o.phone}` : ""}</p>
+              <p class="text-xs text-slate-400">用戶 #${o.userId} · $${o.totalAmt || 0} · ${fmtTime(o.createdAt)}</p>
               <p class="text-sm text-slate-300">${itemSummary}</p>
-              ${optionsLines}
+              ${notesLines}
             </div>
             <div class="flex flex-wrap gap-2 items-center">
-              ${orderStatusBadge(o.status)}
-              ${done ? "" : `
-                ${o.foodReady
-                  ? '<span class="text-xs px-2 py-0.5 rounded bg-emerald-900 text-emerald-300 font-medium">已出餐</span>'
-                  : `<button type="button" data-action="food" data-order-id="${o.id}" class="action-btn present-btn-orange px-3 py-1.5 text-sm">待出餐</button>`}
-                ${o.paymentCollected
-                  ? '<span class="text-xs px-2 py-0.5 rounded bg-sky-900 text-sky-300 font-medium">已收款</span>'
-                  : `<button type="button" data-action="payment" data-order-id="${o.id}" class="action-btn present-btn-primary px-3 py-1.5 text-sm">待收款</button>`}
-              `}
+              ${orderStatusBadge(status)}
+              ${active
+                ? `<button type="button" data-order-id="${o.orderId}"
+                     class="complete-btn present-btn-primary px-3 py-1.5 text-sm">✅ 出餐完成</button>`
+                : ""}
             </div>
           </div>`;
       }).join("");
     }
 
     function bindCompleteButtons(el) {
-      el.querySelectorAll(".action-btn").forEach(btn => {
+      el.querySelectorAll(".complete-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
           const orderId = Number(btn.dataset.orderId);
-          const action  = btn.dataset.action; // "food" | "payment"
-
-          // Update flag in localStorage
-          const orders = loadOrders();
-          const order  = orders.find(o => o.id === orderId);
-          if (!order) return;
-          if (action === "food")    order.foodReady         = true;
-          if (action === "payment") order.paymentCollected  = true;
-          saveOrders(orders);
-          renderOrderList();
-
-          // Both done → complete the order
-          if (order.foodReady && order.paymentCollected) {
-            completeOrder(orderId); // sets status = "READY"
-
-            try {
-              if (order.backendOrderId) {
-                await fetch(`${ORDER_BASE}/orders/${order.backendOrderId}/status?status=COMPLETE`, { method: "PUT" });
-              } else {
-                const userId = getCurrentUserId();
-                const grouped = new Map();
-                (order.items || []).forEach(item => {
-                  const key = String(item.id);
-                  if (!grouped.has(key)) grouped.set(key, { menuId: item.id, quantity: 0, unitPrice: item.price || 0, specialNote: "" });
-                  grouped.get(key).quantity += 1;
-                });
-                const orderRes = await fetch(`${ORDER_BASE}/orders`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ userId, items: [...grouped.values()] })
-                });
-                if (orderRes.ok) {
-                  const backendOrder = await orderRes.json();
-                  const fresh = loadOrders();
-                  const idx = fresh.findIndex(o => o.id === orderId);
-                  if (idx !== -1) { fresh[idx].backendOrderId = backendOrder.orderId; saveOrders(fresh); }
-                  await fetch(`${ORDER_BASE}/orders/${backendOrder.orderId}/status?status=FULLY_PAID`, { method: "PUT" });
-                }
-              }
-            } catch (e) {
-              console.warn("Backend sync failed:", e);
-            }
-
-            renderOrderList();
-            renderStockList();
-            renderSalesReport();
-            const who = order.role === "teacher" ? "Teacher" : "Student";
-            alert(`訂單 #${orderId} 已完成！${who} 點餐頁已通知，取餐記錄已同步至後台。`);
+          btn.disabled = true;
+          btn.textContent = "處理中…";
+          try {
+            const res = await fetch(`${ORDER_BASE}/orders/${orderId}/status?status=COMPLETE`, { method: "PUT" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            await renderOrderList();
+          } catch (e) {
+            alert("更新失敗：" + e.message);
+            btn.disabled = false;
+            btn.textContent = "✅ 出餐完成";
           }
         });
       });
@@ -427,84 +400,42 @@
 
     async function renderOrderList() {
       const el = document.getElementById("orderList");
-
-      // ── Step 1: render localStorage immediately (no blank screen) ───
-      const localOrders = loadOrders().sort((a, b) => b.id - a.id);
-      el.innerHTML = buildOrderRows(localOrders);
-      bindCompleteButtons(el);
-
-      // ── Step 2: fetch backend orders and merge ───────────────────────
-      const localBackendIds = new Set(localOrders.filter(o => o.backendOrderId).map(o => String(o.backendOrderId)));
-      let backendRows = [];
+      el.innerHTML = '<p class="p-6 text-sm text-slate-500 text-center">載入中…</p>';
       try {
         const r = await fetch(`${ORDER_BASE}/orders`);
-        if (r.ok) {
-          const all = await r.json();
-          const todayStr = new Date().toDateString();
-          const todayBackend = all.filter(o => {
-            const d = parseJavaDate(o.createdAt);
-            return !d || d.toDateString() === todayStr;
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const all = await r.json();
+        const todayStr = new Date().toDateString();
+        const filtered = all
+          .filter(o => { const d = parseJavaDate(o.createdAt); return !d || d.toDateString() === todayStr; })
+          .sort((a, b) => {
+            const ta = parseJavaDate(b.createdAt), tb = parseJavaDate(a.createdAt);
+            return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
           });
-          const extras = todayBackend.filter(o => !localBackendIds.has(String(o.orderId)));
-          backendRows = await Promise.all(extras.map(async bo => {
-            let items = [];
-            try {
-              const ir = await fetch(`${ORDER_BASE}/orders/${bo.orderId}/items`);
-              if (ir.ok) items = await ir.json();
-            } catch (_) {}
-            return {
-              id: bo.orderId,
-              backendOrderId: bo.orderId,
-              role: "student",
-              total: bo.totalAmt,
-              createdAt: bo.createdAt,
-              status: bo.orderStatus,
-              phone: null,
-              userId: bo.userId,
-              items: items.map(i => ({
-                id: i.menuId,
-                name: getMenuItemName(i.menuId),
-                price: i.unitPrice,
-                quantity: i.quantity,
-                specialRequestOptions: i.specialNote ? [i.specialNote] : []
-              }))
-            };
-          }));
-        }
-      } catch (_) { /* backend offline — local only */ }
-
-      if (!backendRows.length) return; // nothing new from backend, keep current render
-
-      const allOrders = [...localOrders, ...backendRows]
-        .sort((a, b) => {
-          const ta = parseJavaDate(b.createdAt);
-          const tb = parseJavaDate(a.createdAt);
-          return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
-        });
-
-      if (!allOrders.length) {
-        el.innerHTML = '<p class="p-6 text-sm text-slate-500 text-center">尚無訂單記錄</p>';
+        const itemResults = await Promise.all(
+          filtered.map(o =>
+            fetch(`${ORDER_BASE}/orders/${o.orderId}/items`)
+              .then(r => r.ok ? r.json() : []).catch(() => [])
+          )
+        );
+        todayOrders = filtered.map((o, i) => ({ ...o, items: itemResults[i] }));
+      } catch (e) {
+        todayOrders = [];
+        el.innerHTML = `<p class="p-6 text-sm text-red-400 text-center">訂單載入失敗：${e.message}</p>`;
         return;
       }
-
-      el.innerHTML = buildOrderRows(allOrders);
+      el.innerHTML = buildOrderRows(todayOrders);
       bindCompleteButtons(el);
     }
 
-    function refreshKitchenDashboard() {
-      renderOrderList();   // async — fire and forget
+    async function refreshKitchenDashboard() {
+      await renderOrderList();
       renderStockList();
       renderSalesReport();
       renderKitchenDishTable();
     }
 
     document.getElementById("refreshOrdersBtn").addEventListener("click", refreshKitchenDashboard);
-    window.addEventListener("canteen-store-updated", refreshKitchenDashboard);
-    window.addEventListener("storage", e => {
-      if (e.key === CANTEEN_ORDERS_KEY || e.key === CANTEEN_STORE_KEY) {
-        refreshKitchenDashboard();
-      }
-    });
 
     // 嘗試從 sessionStorage 還原憑證
     try {
@@ -521,20 +452,15 @@
     } catch (_) {}
 
     refreshKitchenDashboard();
-    setInterval(refreshKitchenDashboard, 10000); // auto-refresh every 10 s
+    setInterval(refreshKitchenDashboard, 30000); // auto-refresh every 30 s
 
     function resolvePickupCode(code) {
       const parts = code.toUpperCase().split("-");
       if (parts.length !== 2) return null;
       const [phonePart, orderPart] = parts;
-      const orders = loadOrders();
-      return orders.find(o => {
-        const oPhone = o.phone
-          ? o.phone.slice(-4)
-          : o.userId
-            ? String(o.userId % 10000).padStart(4, "0")
-            : "GUST";
-        const oOrder = String((o.backendOrderId || o.id) % 1000).padStart(3, "0");
+      return todayOrders.find(o => {
+        const oPhone = String(o.userId % 10000).padStart(4, "0");
+        const oOrder = String(o.orderId % 1000).padStart(3, "0");
         return oPhone === phonePart && oOrder === orderPart;
       }) || null;
     }
@@ -554,42 +480,13 @@
         return;
       }
 
-      // Show who this order belongs to before proceeding
-      const roleLabel = order.role === "teacher" ? "TEACHER" : order.role === "student" ? "STUDENT" : "GUEST";
-      const phoneDisplay = order.phone ? `📞 ${order.phone}` : order.userId ? `用戶 #${order.userId}` : "訪客";
-      const itemSummary = (order.items || []).map(i => `${i.name || getMenuItemName(i.id)} x${i.quantity || 1}`).join("、") || "—";
-      const orderLabel = order.backendOrderId || String(order.id).slice(-6);
-
-      if (!order.backendOrderId) {
-        msg.innerHTML = `
-          <div class="bg-slate-700 rounded p-3 text-sm space-y-1">
-            <p class="font-semibold text-white">訂單 #${orderLabel}</p>
-            <p class="text-slate-300">${roleLabel} · ${phoneDisplay} · $${order.total || 0}</p>
-            <p class="text-slate-400">${itemSummary}</p>
-            <p class="text-yellow-400 mt-1">此訂單尚未同步至後端，無法核銷。</p>
-          </div>`;
-        msg.className = "mt-2 text-sm";
-        return;
-      }
-
-      // Fetch backend items
-      let items = [];
-      try {
-        const r = await fetch(`${ORDER_BASE}/orders/${order.backendOrderId}/items`);
-        if (r.ok) items = await r.json();
-      } catch (_) {}
-
-      if (!items.length) {
-        msg.innerHTML = `<span class="text-red-400">無法取得訂單 #${orderLabel} 的明細，請稍後再試。</span>`;
-        msg.className = "mt-2 text-sm";
-        return;
-      }
+      const orderId   = order.orderId;
+      const itemSummary = (order.items || []).map(i => `${getMenuItemName(i.menuId)} x${i.quantity || 1}`).join("、") || "—";
 
       const session = getSession();
       const adminId = session ? session.userId : 0;
-
       let successCount = 0;
-      for (const item of items) {
+      for (const item of (order.items || [])) {
         try {
           const res = await fetch(`${PICKUP_BASE}/api/pickups/verify`, {
             method: "POST",
@@ -604,7 +501,7 @@
         msg.innerHTML = `
           <div class="bg-emerald-900/50 border border-emerald-700 rounded p-3 text-sm space-y-1">
             <p class="font-semibold text-emerald-300">✅ 核銷成功（${successCount} 項）</p>
-            <p class="text-slate-300">訂單 #${orderLabel} · ${roleLabel} · ${phoneDisplay}</p>
+            <p class="text-slate-300">訂單 #${orderId} · 用戶 #${order.userId} · $${order.totalAmt || 0}</p>
             <p class="text-slate-400">${itemSummary}</p>
           </div>`;
         msg.className = "mt-2 text-sm";
