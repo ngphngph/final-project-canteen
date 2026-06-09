@@ -231,7 +231,11 @@
     let dishes = [];
     let drinks = [];
 
-    async function reloadPublishedMenu() {
+    // menuFetched = true once API data is in dishes/drinks; reset when window closes
+    let menuFetched = false;
+
+    // Fetch from API and populate dishes/drinks — called only on first load and background refresh
+    async function fetchMenuFromApi() {
       try {
         const [dishRes, drinkRes] = await Promise.all([
           fetch("/api/dishes/today"),
@@ -239,7 +243,7 @@
         ]);
         if (dishRes.ok && drinkRes.ok) {
           const apiDishes = await dishRes.json();
-          const apiDrinks = await drinkRes.json();
+          const apiDrinks  = await drinkRes.json();
           dishes = apiDishes.map(d => ({
             id: d.id,
             name: d.name,
@@ -264,22 +268,36 @@
               ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
               : []
           }));
+          menuFetched = true;
         } else if (dishRes.status === 403 || drinkRes.status === 403) {
-          // order window closed — show empty menu
           dishes = [];
           drinks = [];
+          menuFetched = false; // allow retry next time window opens
         } else {
           const published = loadFrontendMenu(frontendRole);
           dishes = published.dishes;
           drinks = published.drinks;
+          menuFetched = true;
         }
       } catch (_) {
         const published = loadFrontendMenu(frontendRole);
         dishes = published.dishes;
         drinks = published.drinks;
+        menuFetched = true;
       }
       renderDishes();
       renderDrinks();
+    }
+
+    // Re-render from cache — no API call, no image flicker
+    // Only fetches on first load or after order window closes/reopens
+    function reloadPublishedMenu() {
+      if (!menuFetched) {
+        fetchMenuFromApi();   // async, updates dishes/drinks then renders
+      } else {
+        renderDishes();
+        renderDrinks();
+      }
     }
 
     // 依後端設定動態顯示訂購時段
@@ -706,6 +724,12 @@
         /* 訂單紀錄寫入失敗不阻擋送出 */
       }
       deductStockForOrder(storeState, cart);
+      // Mirror deduction in the local API cache so re-render shows correct stock
+      cart.filter(c => c.type === "dish").forEach(c => {
+        const d = dishes.find(x => x.id === c.id);
+        if (d) d.balance = Math.max(0, (d.balance || 0) - 1);
+      });
+      dishes.forEach(d => { d.status = d.balance > 0 ? "ON_LIST" : "SOLD_OUT"; });
       cart.length = 0;
       reloadPublishedMenu();
       renderCart();
@@ -1112,7 +1136,7 @@
       if (changed) { saveOrders(orders); renderMyOrders(); }
     }
 
-    reloadPublishedMenu();
+    fetchMenuFromApi();   // initial load — fetch from API once
     renderCart();
     renderMyOrders();
     updateAuthUI();
@@ -1120,6 +1144,8 @@
     syncPickupStatus();
     setInterval(syncPickupStatus, 20000);
     setInterval(updateOrderWindowBadge, 60000);
+    // Silent background refresh every 5 min — browser has images cached so no visible flicker
+    setInterval(fetchMenuFromApi, 5 * 60 * 1000);
 
     window.addEventListener("canteen-store-updated", refreshCustomerPage);
     window.addEventListener("storage", (e) => {
