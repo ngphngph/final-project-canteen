@@ -710,7 +710,7 @@
         alert("購物車是空的，請先加入菜品或飲品。");
         return;
       }
-      const storeState = loadCanteenState();
+      const storeState = { dishes };
       const stockCheck = validateOrderStock(storeState, cart);
       if (!stockCheck.ok) {
         alert(stockCheck.message);
