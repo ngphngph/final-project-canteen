@@ -558,7 +558,7 @@
     </thead>
     <tbody>
       <tr><td>金流付款</td><td>☁ Stripe Cloud</td><td>合規、安全、可靠性 99.99%，免維運</td></tr>
-      <tr><td>菜單圖片儲存</td><td>本地 <code>/uploads/**</code></td><td>單機 MVP 階段；未來可遷移 S3 / Cloudflare R2</td></tr>
+      <tr><td>菜單圖片儲存</td><td>☁ Cloudflare R2</td><td>容器重啟圖片不滅失；免費方案足夠 MVP；image_url 直接存 public URL</td></tr>
       <tr><td>使用者認證</td><td>本地 JWT + BCrypt</td><td>無第三方依賴，控管最大化</td></tr>
       <tr><td>取餐通知</td><td>本地 WebSocket</td><td>低延遲、無需經外部服務</td></tr>
       <tr><td>排程任務</td><td>本地 Spring Scheduler</td><td>每日庫存重置，量小無需 cloud job runner</td></tr>
@@ -626,8 +626,85 @@
 
   <p>同時將 Caffeine cache 替換為 Redis，並改用 SQS / EventBridge 做服務間非同步通訊。屆時架構即升級為「真正的微服務」。</p>
 
-  <!-- ============== 八、結語 ============== -->
-  <h2>八、結語：務實大於理想</h2>
+  <!-- ============== 八、圖片儲存問題與 Cloudflare R2 解決方案 ============== -->
+  <h2>八、圖片儲存問題與 Cloudflare R2 解決方案</h2>
+
+  <h3>問題根源</h3>
+  <p>
+    原始設計將上傳圖片存放於容器本地檔案系統（<code>/app/uploads/menu/</code>），
+    並由 Spring Boot <code>WebConfig</code> 透過 <code>/uploads/**</code> 路徑對外提供服務。
+    在本機 Docker Compose 環境中，<code>uploads_data</code> named volume 可使圖片在容器重啟後保留。
+  </p>
+  <p>
+    然而在 <strong>Zeabur</strong> 雲端平台部署後，每次 git push 觸發重新部署時容器會被替換，
+    本地檔案系統全數清空。資料庫中的 <code>image_url</code> 欄位仍保留舊路徑（如
+    <code>/uploads/dish_af962598-....jpg</code>），但實際檔案已不存在，
+    瀏覽器請求時收到 HTTP 404，前端所有圖片空白。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:30%">情境</th><th>圖片是否存活</th><th>原因</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>本機 Docker Compose</td><td>✅ 存活</td><td><code>uploads_data</code> named volume 持久化</td></tr>
+      <tr><td>Zeabur 重新部署後</td><td>❌ 消失</td><td>容器替換，無持久 volume，檔案清零</td></tr>
+    </tbody>
+  </table>
+
+  <h3>解決方案：Cloudflare R2 外部儲存</h3>
+  <p>
+    放棄在容器內存圖，改用 <strong>Cloudflare R2</strong> Object Storage 作為圖片倉庫。
+    R2 免費方案（10 GB 儲存 / 月 100 萬次請求）對校園餐廳規模完全足夠。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:28%">步驟</th><th>做法</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1. 建立 R2 Bucket</td>
+        <td>Cloudflare Dashboard → R2 → 建立 bucket（例：<code>canteendb</code>）</td>
+      </tr>
+      <tr>
+        <td>2. 開啟公開存取</td>
+        <td>Bucket → Settings → Public Access → Allow Access，取得 <code>https://pub-xxx.r2.dev</code> base URL</td>
+      </tr>
+      <tr>
+        <td>3. 上傳圖片</td>
+        <td>手動上傳 <code>dish.jpg</code>、<code>drink.jpg</code> 至 R2 bucket</td>
+      </tr>
+      <tr>
+        <td>4. 更新資料庫</td>
+        <td>
+          在 PostgreSQL 執行：<br/>
+          <code>UPDATE dishes SET image_url = 'https://pub-xxx.r2.dev/dish.jpg';</code><br/>
+          <code>UPDATE drinks SET image_url = 'https://pub-xxx.r2.dev/drink.jpg';</code>
+        </td>
+      </tr>
+      <tr>
+        <td>5. 清除 Caffeine Cache</td>
+        <td>重啟 Zeabur 服務，或等待 3 分鐘讓 <code>dishes-today</code>/<code>drinks-today</code> cache TTL 到期</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    此方案的 <code>image_url</code> 欄位直接儲存完整的 HTTPS public URL（如
+    <code>https://pub-e47315ff76f145eeae9e5a2f8486bea8.r2.dev/dish.jpg</code>），
+    瀏覽器直接向 Cloudflare CDN 拉取圖片，Spring Boot 完全不參與圖片傳輸。
+    每次部署後圖片依然存活，無需重新上傳。
+  </p>
+
+  <div class="good">
+    <strong>架構決策：</strong>圖片不屬於「業務邏輯」，不應由應用伺服器負責儲存與傳輸。
+    外包給 Cloudflare R2 既節省容器 RAM，又獲得 CDN 加速與跨部署持久性。
+    這是「Right-sized Architecture」的體現：用最低成本解決最實際的問題。
+  </div>
+
+  <!-- ============== 九、結語 ============== -->
+  <h2>九、結語：務實大於理想</h2>
 
   <div class="good">
     <strong>v2 的核心信念：</strong>
