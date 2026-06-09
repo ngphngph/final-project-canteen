@@ -97,20 +97,34 @@
           <p id="verify-msg" class="mt-2 text-sm"></p>
         </section>
 
+        <!-- 廚房 API 憑證設定 -->
+        <section id="kitchenCredPanel" class="kitchen-card p-4 border border-amber-500/40 bg-amber-900/20">
+          <h2 class="font-semibold text-sm text-amber-400 mb-2">🔐 廚房 API 憑證</h2>
+          <div class="flex flex-wrap gap-3 items-end">
+            <label class="block text-xs text-slate-400">帳號
+              <input id="kitchenUser" type="text" value="kitchen_user"
+                class="mt-1 bg-slate-700 border border-slate-500 rounded px-2 py-1.5 w-36 text-white text-sm" /></label>
+            <label class="block text-xs text-slate-400">密碼
+              <input id="kitchenPass" type="password" placeholder="kitchen123"
+                class="mt-1 bg-slate-700 border border-slate-500 rounded px-2 py-1.5 w-36 text-white text-sm" /></label>
+            <button type="button" onclick="setKitchenCredentials()"
+              class="present-btn-primary px-4 py-2 text-sm self-end">設定並載入菜單</button>
+          </div>
+        </section>
+
         <section class="kitchen-card overflow-hidden">
           <div class="p-4 border-b border-slate-600 flex flex-wrap justify-between items-center gap-3">
-            <h2 class="font-semibold text-lg">Dish 菜單管理</h2>
-            <button type="button" onclick="saveAllData()" class="present-btn-primary px-4 py-2 text-sm">💾 儲存全部資料</button>
+            <h2 class="font-semibold text-lg">Dish 菜單管理（廚房：更新庫存／備注）</h2>
+            <button type="button" onclick="saveAllData()" class="present-btn-primary px-4 py-2 text-sm">💾 儲存庫存與備注</button>
           </div>
           <div class="overflow-x-auto">
             <table class="present-table w-full text-sm">
               <thead>
                 <tr>
-                  <th class="text-left px-4 py-3">Dish</th>
-                  <th class="text-left px-4 py-3">庫存</th>
+                  <th class="text-left px-4 py-3">Dish（唯讀）</th>
+                  <th class="text-left px-4 py-3">庫存（可改）</th>
                   <th class="text-left px-4 py-3">狀態</th>
-                  <th class="text-left px-4 py-3">Special Request</th>
-                  <th class="text-left px-4 py-3">刪除</th>
+                  <th class="text-left px-4 py-3">Special Request（可改）</th>
                 </tr>
               </thead>
               <tbody id="dishTableBody"></tbody>
@@ -126,7 +140,7 @@
     // ORDER_BASE, PICKUP_BASE, LOGIN_BASE already defined in canteen-store.js
 
     const state = loadCanteenState();
-    rehydrateMenuImagesFromStore(state);
+    let menuCache = {}; // id → name, populated after API load
 
     function dishStatusBadge(status) {
       if (status === "SOLD_OUT") return '<span class="present-badge-sold">售罄</span>';
@@ -144,58 +158,105 @@
       return value.split(",").map(s => s.trim()).filter(Boolean);
     }
 
+    // ── 廚房 API 憑證 ─────────────────────────────────────
+    let kitchenUser = "", kitchenPass = "";
+
+    function kitchenHeaders(extra) {
+      const h = extra ? { ...extra } : {};
+      if (kitchenUser && kitchenPass) {
+        h["Authorization"] = "Basic " + btoa(kitchenUser + ":" + kitchenPass);
+      }
+      return h;
+    }
+
+    function setKitchenCredentials() {
+      const u = document.getElementById("kitchenUser").value.trim();
+      const p = document.getElementById("kitchenPass").value;
+      if (!u || !p) { alert("請填入帳號與密碼"); return; }
+      kitchenUser = u;
+      kitchenPass = p;
+      try { sessionStorage.setItem("_ku", u); sessionStorage.setItem("_kp", p); } catch (_) {}
+      document.getElementById("kitchenCredPanel").classList.add("hidden");
+      loadDishesFromApi();
+    }
+
+    async function loadDishesFromApi() {
+      const today = new Date().toISOString().slice(0, 10);
+      try {
+        const res = await fetch(`/api/dishes?date=${today}`, { headers: kitchenHeaders() });
+        if (res.ok) {
+          const apiDishes = await res.json();
+          state.dishes = apiDishes.map(d => ({
+            id: d.id,
+            name: d.name,
+            code: d.code || "",
+            price: Number(d.price) || 0,
+            balance: d.balance ?? 0,
+            status: d.status || "SOLD_OUT",
+            imageUrl: d.imageUrl || "",
+            image: d.imageUrl || "",
+            options: d.specialRequestOptions
+              ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
+              : []
+          }));
+          menuCache = {};
+          apiDishes.forEach(d => { menuCache[d.id] = d.name; });
+        }
+      } catch (e) {
+        console.warn("菜單 API 載入失敗", e);
+      }
+      renderKitchenDishTable();
+      renderStockList();
+    }
+
     function renderKitchenDishTable() {
       const dishBody = document.getElementById("dishTableBody");
       if (!dishBody) return;
+      if (!state.dishes.length) {
+        dishBody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">請先設定廚房憑證以載入菜單</td></tr>';
+        return;
+      }
       dishBody.innerHTML = state.dishes.map(d => `
         <tr class="border-t">
-          <td class="px-4 py-3"><input id="dish-name-${d.id}" class="border rounded px-2 py-1 w-40" value="${d.name}" /></td>
-          <td class="px-4 py-3"><input id="dish-balance-${d.id}" class="border rounded px-2 py-1 w-20" type="number" value="${d.balance}" /></td>
+          <td class="px-4 py-3 text-slate-300 font-medium">${d.name}</td>
+          <td class="px-4 py-3"><input id="dish-balance-${d.id}" class="bg-slate-700 border border-slate-500 rounded px-2 py-1 w-20 text-white" type="number" min="0" value="${d.balance}" /></td>
           <td class="px-4 py-3">${dishStatusBadge(d.status)}</td>
-          <td class="px-4 py-3"><input id="dish-options-${d.id}" class="border rounded px-2 py-1 w-56" value="${(d.options || []).join(", ")}" /></td>
-          <td class="px-4 py-3">
-            <button type="button" onclick="deleteDish(${d.id})"
-              class="text-red-400 hover:text-red-300 text-sm">🗑</button>
-          </td>
+          <td class="px-4 py-3"><input id="dish-options-${d.id}" class="bg-slate-700 border border-slate-500 rounded px-2 py-1 w-56 text-white" value="${(d.options || []).join(", ")}" /></td>
         </tr>
       `).join("");
     }
 
-    function collectDishFormIntoState() {
-      state.dishes.forEach(d => {
-        const nameEl = document.getElementById(`dish-name-${d.id}`);
-        if (!nameEl) return;
-        d.name = nameEl.value.trim();
-        d.balance = Number(document.getElementById(`dish-balance-${d.id}`).value);
-        d.options = parseOptions(document.getElementById(`dish-options-${d.id}`).value);
-      });
-      refreshDishStatuses(state);
-    }
-
-    function saveAllData() {
-      collectDishFormIntoState();
-      try {
-        saveCanteenStateAndSync(state);
-        renderKitchenDishTable();
-        refreshKitchenDashboard();
-        alert("已完成儲存：已同步 Teacher / Student 前台菜單。");
-      } catch (e) {
-        alert(e.message || "儲存失敗");
+    async function saveAllData() {
+      if (!kitchenUser) { alert("請先設定廚房帳號密碼"); return; }
+      const errors = [];
+      for (const d of state.dishes) {
+        const balEl = document.getElementById(`dish-balance-${d.id}`);
+        const optEl = document.getElementById(`dish-options-${d.id}`);
+        if (!balEl) continue;
+        const newBalance = Number(balEl.value) || 0;
+        const newOptions = optEl ? optEl.value.trim() : "";
+        try {
+          const r1 = await fetch(`/api/dishes/${d.id}/balance`, {
+            method: "PATCH",
+            headers: kitchenHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ balance: newBalance })
+          });
+          if (!r1.ok) errors.push(`Dish #${d.id} 庫存：HTTP ${r1.status}`);
+          if (newOptions) {
+            await fetch(`/api/dishes/${d.id}/special-request-options`, {
+              method: "PATCH",
+              headers: kitchenHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ specialRequestOptions: newOptions })
+            });
+          }
+        } catch (e) { errors.push(`Dish #${d.id}：${e.message}`); }
       }
-    }
-
-    function deleteDish(id) {
-      const dish = state.dishes.find(d => d.id === id);
-      if (!dish) return;
-      if (!confirm(`確定要刪除 Dish「${dish.name}」嗎？此操作會同步更新 Teacher / Student 前台。`)) {
-        return;
+      await loadDishesFromApi();
+      if (errors.length) {
+        alert("部分儲存失敗：\n" + errors.join("\n"));
+      } else {
+        alert("✅ 庫存與 Special Request 已更新至後端！");
       }
-      collectDishFormIntoState();
-      deleteDishFromState(state, id);
-      saveCanteenStateAndSync(state);
-      renderKitchenDishTable();
-      refreshKitchenDashboard();
-      alert(`已刪除 Dish #${id}，並同步前台。`);
     }
 
     function orderStatusBadge(status) {
@@ -208,19 +269,18 @@
     }
 
     function getMenuItemName(menuId) {
-      const s = loadCanteenState();
-      const d = s.dishes.find(x => x.id === menuId);
+      if (menuCache[menuId]) return menuCache[menuId];
+      const d = state.dishes.find(x => x.id === menuId);
       if (d) return d.name;
-      const dr = (s.drinks || []).find(x => x.id === menuId);
+      const dr = (state.drinks || []).find(x => x.id === menuId);
       if (dr) return dr.name;
       return `#${menuId}`;
     }
 
     function renderStockList() {
-      const state = loadCanteenState();
       const el = document.getElementById("stockList");
       if (!state.dishes.length) {
-        el.innerHTML = '<p class="text-sm text-slate-500">暫無菜品資料</p>';
+        el.innerHTML = '<p class="text-sm text-slate-500">請先設定廚房憑證以載入庫存</p>';
         return;
       }
       el.innerHTML = state.dishes
@@ -239,7 +299,7 @@
 
     function renderSalesReport() {
       const orders = getTodayOrders();
-      const report = buildTodaySalesReport(orders, loadCanteenState());
+      const report = buildTodaySalesReport(orders, state);
       const el = document.getElementById("salesReport");
       el.innerHTML = `
         <div class="stat-card"><p>總單數</p><p>${report.totalOrders}</p></div>
@@ -445,6 +505,20 @@
         refreshKitchenDashboard();
       }
     });
+
+    // 嘗試從 sessionStorage 還原憑證
+    try {
+      const su = sessionStorage.getItem("_ku");
+      const sp = sessionStorage.getItem("_kp");
+      if (su && sp) {
+        kitchenUser = su;
+        kitchenPass = sp;
+        document.getElementById("kitchenUser").value = su;
+        document.getElementById("kitchenPass").value = sp;
+        document.getElementById("kitchenCredPanel").classList.add("hidden");
+        loadDishesFromApi();
+      }
+    } catch (_) {}
 
     refreshKitchenDashboard();
     setInterval(refreshKitchenDashboard, 10000); // auto-refresh every 10 s
