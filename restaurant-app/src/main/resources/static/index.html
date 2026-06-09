@@ -734,8 +734,6 @@
       } catch (_) {
         /* 訂單紀錄寫入失敗不阻擋送出 */
       }
-      deductStockForOrder(storeState, cart);
-      // Mirror deduction in the local API cache so re-render shows correct stock
       cart.filter(c => c.type === "dish").forEach(c => {
         const d = dishes.find(x => x.id === c.id);
         if (d) d.balance = Math.max(0, (d.balance || 0) - 1);
