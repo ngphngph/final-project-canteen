@@ -285,8 +285,21 @@
         drinks = published.drinks;
         menuFetched = true;
       }
+      applyLocalStockOverrides();
       renderDishes();
       renderDrinks();
+    }
+
+    function applyLocalStockOverrides() {
+      const state = loadCanteenState();
+      if (!state || !state.dishes) return;
+      dishes.forEach(d => {
+        const local = state.dishes.find(x => x.id === d.id);
+        if (local != null && local.balance != null) {
+          d.balance = Number(local.balance);
+          d.status = d.balance > 0 ? "ON_LIST" : "SOLD_OUT";
+        }
+      });
     }
 
     // Re-render from cache — no API call, no image flicker
@@ -295,6 +308,7 @@
       if (!menuFetched) {
         fetchMenuFromApi();   // async, updates dishes/drinks then renders
       } else {
+        applyLocalStockOverrides();
         renderDishes();
         renderDrinks();
       }
