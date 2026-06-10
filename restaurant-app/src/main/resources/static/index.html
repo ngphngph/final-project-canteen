@@ -120,7 +120,7 @@
   <div id="allOrdersModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4">
     <div class="bg-white w-full max-w-lg rounded-2xl p-5 max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 shrink-0">
-        <h4 class="text-xl font-semibold">我的全部訂單（今日）</h4>
+        <h4 class="text-xl font-semibold">我的全部訂單</h4>
         <button type="button" id="closeAllOrdersModal" class="text-slate-500 hover:text-slate-700 text-lg leading-none">×</button>
       </div>
       <div id="allOrdersContent" class="space-y-3 overflow-y-auto pr-1 flex-1"></div>
@@ -233,11 +233,6 @@
 
     // menuFetched = true once API data is in dishes/drinks; reset when window closes
     let menuFetched = false;
-    let lastDishesHash = "";
-    let lastDrinksHash = "";
-    function hashItems(items) {
-      return items.map(i => `${i.id}:${i.balance}:${i.status}:${i.price}`).join("|");
-    }
 
     // Fetch from API and populate dishes/drinks — called only on first load and background refresh
     async function fetchMenuFromApi() {
@@ -447,17 +442,53 @@
       el.innerHTML = preview.map(o => renderOrderCardHtml(o, false)).join("");
     }
 
-    function openAllOrdersModal() {
+    function _mapBackendStatus(s) {
+      return { PENDING_PAY: "PENDING", DEPOSIT_PAID: "DEPOSIT_PAID",
+               FULLY_PAID: "FULLY_PAID", COMPLETE: "PICKED_UP" }[s] || s;
+    }
+
+    function _backendOrderToDisplay(o, session) {
+      return {
+        id: o.orderId,
+        backendOrderId: o.orderId,
+        createdAt: o.createdAt,
+        status: _mapBackendStatus(o.orderStatus),
+        total: o.totalAmt,
+        items: [],
+        phone: session ? session.phone : null,
+        userId: o.userId
+      };
+    }
+
+    async function openAllOrdersModal() {
       const modal = document.getElementById("allOrdersModal");
       const content = document.getElementById("allOrdersContent");
-      const orders = getMyOrders();
-      if (!orders.length) {
-        content.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">今日尚無訂單</p>';
-      } else {
-        content.innerHTML = orders.map(o => renderOrderCardHtml(o, true)).join("");
-      }
       modal.classList.remove("hidden");
       modal.classList.add("flex");
+      content.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">載入中…</p>';
+
+      const session = getSession();
+      let orders = [];
+
+      if (session) {
+        try {
+          const res = await fetch(`${ORDER_BASE}/orders/user/${session.userId}`);
+          if (res.ok) {
+            const data = await res.json();
+            orders = data
+              .map(o => _backendOrderToDisplay(o, session))
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          }
+        } catch (_) {
+          orders = loadOrders().sort((a, b) => b.id - a.id);
+        }
+      } else {
+        orders = loadOrders().sort((a, b) => b.id - a.id);
+      }
+
+      content.innerHTML = orders.length
+        ? orders.map(o => renderOrderCardHtml(o, true)).join("")
+        : '<p class="text-sm text-slate-400 text-center py-6">尚無訂單記錄</p>';
     }
 
     function closeAllOrdersModal() {
@@ -480,9 +511,6 @@
 
     // 渲染 Dish 卡片
     function renderDishes() {
-      const hash = hashItems(dishes);
-      if (hash === lastDishesHash) return;
-      lastDishesHash = hash;
       const el = document.getElementById("dishList");
       el.innerHTML = dishes.map(d => `
         <div class="present-menu-card text-center ${d.status === "SOLD_OUT" ? "opacity-70" : ""}">
@@ -514,9 +542,6 @@
 
     // 渲染 Drink 卡片（Drink 沒有存貨限制）
     function renderDrinks() {
-      const hash = hashItems(drinks);
-      if (hash === lastDrinksHash) return;
-      lastDrinksHash = hash;
       const el = document.getElementById("drinkList");
       el.innerHTML = drinks.map(d => `
         <div class="present-menu-card text-center">
@@ -710,7 +735,7 @@
         alert("購物車是空的，請先加入菜品或飲品。");
         return;
       }
-      const storeState = { dishes };
+      const storeState = loadCanteenState();
       const stockCheck = validateOrderStock(storeState, cart);
       if (!stockCheck.ok) {
         alert(stockCheck.message);
@@ -734,6 +759,8 @@
       } catch (_) {
         /* 訂單紀錄寫入失敗不阻擋送出 */
       }
+      deductStockForOrder(storeState, cart);
+      // Mirror deduction in the local API cache so re-render shows correct stock
       cart.filter(c => c.type === "dish").forEach(c => {
         const d = dishes.find(x => x.id === c.id);
         if (d) d.balance = Math.max(0, (d.balance || 0) - 1);
