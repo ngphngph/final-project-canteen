@@ -381,14 +381,23 @@
         el.innerHTML = '<p class="text-sm text-slate-500">請先設定廚房憑證以載入庫存</p>';
         return;
       }
+      // Count ordered qty per dish from today's orders
+      const orderedQty = {};
+      todayOrders.forEach(o => (o.items || []).forEach(i => {
+        if (!i.menuType || i.menuType === "DISH") {
+          orderedQty[i.menuId] = (orderedQty[i.menuId] || 0) + (i.quantity || 1);
+        }
+      }));
       el.innerHTML = state.dishes
         .map(d => {
-          const balance = Number(d.balance) || 0;
-          const soldOut = balance <= 0 || d.status === "SOLD_OUT";
+          const original = Number(d.balance) || 0;
+          const ordered  = orderedQty[d.id] || 0;
+          const remaining = Math.max(0, original - ordered);
+          const soldOut = remaining <= 0 || d.status === "SOLD_OUT";
           return `
             <div class="flex justify-between text-sm border-b border-slate-600/50 pb-2 ${soldOut ? "text-red-400" : "text-slate-300"}">
               <span>${d.name}</span>
-              <span>尚餘 ${balance} 份</span>
+              <span>${ordered > 0 ? `已點 ${ordered} / ` : ""}尚餘 ${remaining} 份</span>
             </div>
           `;
         })
