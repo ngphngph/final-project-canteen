@@ -40,7 +40,7 @@ stripe:
   secret-key: ${STRIPE_SECRET_KEY:sk_test_YOUR_KEY_HERE}
   success-url: ${STRIPE_SUCCESS_URL:http://localhost/index.html?topup=success&session_id={CHECKOUT_SESSION_ID}}
   cancel-url: ${STRIPE_CANCEL_URL:http://localhost/index.html?topup=cancel}
-  currency: twd
+  currency: hkd
 
 jwt:
   secret: ${JWT_SECRET:canteen-default-secret-key-must-be-32-chars!}

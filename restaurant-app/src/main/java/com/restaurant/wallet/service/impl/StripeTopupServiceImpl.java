@@ -54,7 +54,7 @@ public class StripeTopupServiceImpl implements StripeTopupService {
         walletRepository.findById(walletId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found: " + walletId));
 
-        long stripeAmount = amount.longValue();
+        long stripeAmount = amount.multiply(BigDecimal.valueOf(100)).longValue();
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
