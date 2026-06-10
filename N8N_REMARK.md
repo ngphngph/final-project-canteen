@@ -1,305 +1,207 @@
-# N8N 整合備案 — WhatsApp 取餐通知
+# WhatsApp 取餐查詢 — Cloudflare Workers 方案
 
-> 狀態：**計劃中，尚未實作**
-> 討論日期：2026-06-09
-> 功能描述：廚房按「叫號」後，系統自動透過 N8N 發送 WhatsApp 通知用戶取餐
+> 狀態：**後端已完成，等待 Meta 憑證**
+> 更新日期：2026-06-10
+> 功能描述：客人主動發 WhatsApp 輸入取餐碼，系統自動回覆訂單狀態
 
 ---
 
 ## 一、功能目標
 
-廚房完成備餐，按下叫號按鈕時：
+客人持取餐碼（如 `0289-003`）主動查詢取餐狀態：
 
-1. 現有流程（已實作）：WebSocket 廣播到廚房螢幕
-2. **新增流程**：同步觸發 N8N Webhook → N8N 發送 WhatsApp 給用戶手機
+| 客人傳送 | 系統回覆 |
+|---------|---------|
+| `0289-003` | 取餐碼 (0289-003) 已完成，14:30 可取餐。 |
+| `0289-003` | 取餐碼 (0289-003) 這單號還在製作中，請稍候。 |
+| 無效碼 | 找不到取餐碼 (0289-003)，請確認後再試。 |
+
+**注意：廚房不主動發送通知，由客人自行查詢。**
 
 ---
 
 ## 二、整合架構
 
 ```
-廚房按「叫號」按鈕
-    ↓
-POST /api/pickups/{pickupId}/call
-    ↓
-MealPickupService.callPickup()
-    ├─ webSocketHandler.broadcast(...)   ← 現有，保留
-    └─ n8nNotificationService.notify()  ← 新增，@Async fire-and-forget
-                ↓
-        HTTP POST → N8N Webhook URL
-                ↓
-          N8N Workflow
-          [Webhook Trigger]
-                ↓
-          [WhatsApp Node]
-                ↓
-        用戶手機收到 WhatsApp 訊息
+客人發 WhatsApp（輸入取餐碼）
+        ↓
+Meta WhatsApp Business API Webhook
+        ↓
+Cloudflare Workers（免費，無記憶體壓力）
+        ↓
+GET https://your-domain/api/pickups/status?code=0289-003
+        ↓
+Java 回傳 { status, expectedTime }（輕量 JSON）
+        ↓
+Cloudflare Workers 組合回覆訊息
+        ↓
+Meta WhatsApp API 發回給客人
 ```
 
-### Webhook Payload（Spring Boot → N8N）
+### 為何選 Cloudflare Workers
+- 免費：100,000 requests/天
+- 零記憶體壓力（不佔 Zeabur 2GB）
+- 無需部署額外 server
+- N8N Cloud 只有 14 天試用，不適合長期使用
 
+---
+
+## 三、後端（已完成 ✅）
+
+### 新增 endpoint
+
+```
+GET /api/pickups/status?code=0289-003
+```
+
+**Response（輕量）：**
 ```json
-{
-  "pickupId": 123,
-  "itemId": 456,
-  "pickupCode": "0289-003",
-  "phone": "0912345678",
-  "message": "您的餐點已備妥，請憑取餐碼 0289-003 取餐"
-}
+{ "code": "0289-003", "status": "READY", "expectedTime": "14:30" }
+{ "code": "0289-003", "status": "PENDING", "expectedTime": "14:30" }
+{ "code": "0289-003", "status": "NOT_FOUND", "expectedTime": null }
 ```
 
----
-
-## 三、現有程式碼切入點
-
-### 觸發位置
-
-**檔案：** `restaurant-app/src/main/java/com/restaurant/pickup/service/MealPickupService.java`
-
-```java
-// line 52 — 現有方法，N8N 呼叫加在這裡
-public PickupResponse callPickup(Long pickupId) {
-    MealPickup pickup = repository.findById(pickupId)
-            .orElseThrow(() -> new IllegalArgumentException("找不到 pickupId: " + pickupId));
-    webSocketHandler.broadcast(PickupCallMessage.of(pickupId, pickup.getMethod()));
-    // ← 在這裡加：n8nNotificationService.notifyPickupReady(pickup);
-    return toResponse(pickup, "叫號廣播已發送");
-}
-```
-
-**API 端點：**
-
-```
-POST /api/pickups/{pickupId}/call
-```
-
-**對應 Controller：** `MealPickupController.java` line 56
-
----
-
-## 四、最大設計問題：電話號碼從哪裡來？
-
-`MealPickup` entity 目前只有：
-
-| 欄位 | 說明 |
+### 修改的檔案
+| 檔案 | 變動 |
 |------|------|
-| `pickupId` | 主鍵 |
-| `itemId` | 對應 OrderItemEntity |
-| `method` | 取餐碼（格式：`userId%10000 - orderId%1000`） |
-| `expectedTime` | 預計取餐時間 |
-| `actualTime` | 實際取餐時間 |
-| `adminId` | 核銷的管理員 |
-| `adminNotified` | 是否已通知 |
-
-**沒有 `phone` 欄位。** 要通知用戶，需要透過以下路徑取得：
-
-```
-pickupId → itemId → OrderItemEntity.orderId → OrderEntity.userId → login module → phone
-```
-
-### 三個方案比較
-
-| 方案 | 做法 | 優點 | 缺點 |
-|------|------|------|------|
-| **A（推薦）** | `createPickup` 時把 `phone` 存進 `MealPickup` entity | 最簡單，`callPickup` 直接讀取 | 需新增 DB 欄位 `phone VARCHAR(20)` |
-| **B** | `callPickup` 時 Feign 呼叫 order module → login module | 不改 entity | 關鍵路徑多 2 次 HTTP 呼叫，且需新增兩個 FeignClient |
-| **C** | N8N Webhook 只收 `itemId`，N8N 自己反查 Spring Boot API | Spring Boot 最乾淨 | N8N 需帶 auth header 呼叫 API，N8N 設定複雜 |
-
-### 方案 A 的實作變動
-
-1. `MealPickup` entity 加欄位：
-```java
-@Column(name = "phone", length = 20)
-private String phone;
-```
-
-2. `PickupCreateRequest` DTO 加欄位：
-```java
-private String phone;
-```
-
-3. `MealPickupService.createPickup()` 存入 phone：
-```java
-pickup.setPhone(req.getPhone());
-```
-
-4. 前端 `createPickup` 時從 `localStorage` 的 `canteen_session.phone` 帶入
+| `MealPickupRepository.java` | 新增 `findByMethod(String method)` |
+| `PickupStatusResp.java` | 新增 DTO（record，3 個欄位） |
+| `MealPickupService.java` | 新增 `getStatusByCode(String code)` |
+| `MealPickupController.java` | 新增 `GET /api/pickups/status` |
 
 ---
 
-## 五、N8N 部署方案
+## 四、Cloudflare Workers（待部署）
 
-### 記憶體預算（2 GB EC2 現況）
+### 需要準備的 Meta 憑證
 
-```
-PostgreSQL 18        400 MB
-restaurant-app       700 MB
-Nginx                ~50 MB
-OS / Buffer          ~850 MB
-─────────────────────────────
-合計                 ~2 GB  ← 已接近上限
-```
+| 項目 | 取得位置 | 備注 |
+|------|---------|------|
+| **Phone Number ID** | Meta Developer Console → WhatsApp → API Setup | 數字 ID，非電話號碼 |
+| **Permanent Access Token** | Meta Developer Console → WhatsApp → API Setup → Generate token | 長期 token，勿使用臨時 token |
+| **Webhook Verify Token** | 自行設定任意字串 | 例如 `my-canteen-secret-2026` |
+| **WhatsApp Business Account ID** | Meta Developer Console | 設定 webhook 時需要 |
 
-| 方案 | RAM 開銷 | 建議 |
-|------|----------|------|
-| **Self-hosted（同台 EC2）** | +300 MB → 推至 ~2.3 GB，有 OOM 風險 | ❌ 不建議 |
-| **N8N Cloud 免費版** | 0（在雲端執行） | ✅ 推薦，5 個 workflow 免費，足夠本案 |
-
-**N8N Cloud 免費版限制：**
-- 5 個 active workflow
-- 每月 2,500 次執行
-- 單次執行時間 ≤ 60 秒
-
-對校園 POS（每日訂單量數百筆）完全足夠。
-
----
-
-## 六、WhatsApp 發送方案
-
-N8N 支援以下方式發送 WhatsApp：
-
-| 方案 | 費用 | 設定難度 | 備註 |
-|------|------|----------|------|
-| **Twilio WhatsApp** | ~$0.005 USD / 則 | 低，N8N 有內建 Twilio node | 需 Twilio 帳號 + WhatsApp sender 申請 |
-| **Meta WhatsApp Business Cloud API** | 每月 1,000 則免費 | 中，需申請 Meta Business 帳號 | 適合正式營運；審核約 1–2 天 |
-| **360dialog** | 按量付費 | 中 | 第三方代理 Meta API |
-
-**MVP 階段推薦：Twilio**（最快上線，N8N 一鍵設定）
-
----
-
-## 七、完整實作步驟（待執行）
-
-### Step 1 — 修改 MealPickup entity（方案 A）
-
-```
-MealPickup.java        → 加 phone 欄位
-PickupCreateRequest.java → 加 phone 欄位
-MealPickupService.java  → createPickup() 存入 phone
-```
-
-### Step 2 — 加 application.yml 設定
-
-```yaml
-n8n:
-  webhook-url: https://your-n8n-cloud.app.n8n.cloud/webhook/pickup-notify
-  enabled: true
-```
-
-### Step 3 — 建立 N8nNotificationService
-
-位置：`com/restaurant/pickup/service/N8nNotificationService.java`
-
-```java
-@Service
-@RequiredArgsConstructor
-public class N8nNotificationService {
-
-    @Value("${n8n.webhook-url}")
-    private String webhookUrl;
-
-    @Value("${n8n.enabled:true}")
-    private boolean enabled;
-
-    private final RestTemplate restTemplate;
-
-    @Async
-    public void notifyPickupReady(Long pickupId, String phone, String pickupCode) {
-        if (!enabled || phone == null) return;
-        try {
-            Map<String, Object> payload = Map.of(
-                "pickupId", pickupId,
-                "phone", phone,
-                "pickupCode", pickupCode,
-                "message", "您的餐點已備妥，請憑取餐碼 " + pickupCode + " 取餐"
-            );
-            restTemplate.postForObject(webhookUrl, payload, String.class);
-        } catch (Exception e) {
-            // fire-and-forget：N8N 失敗不影響主流程
-        }
-    }
-}
-```
-
-### Step 4 — 修改 callPickup()
-
-```java
-public PickupResponse callPickup(Long pickupId) {
-    MealPickup pickup = repository.findById(pickupId)
-            .orElseThrow(() -> new IllegalArgumentException("找不到 pickupId: " + pickupId));
-    webSocketHandler.broadcast(PickupCallMessage.of(pickupId, pickup.getMethod()));
-    n8nNotificationService.notifyPickupReady(pickupId, pickup.getPhone(), pickup.getMethod());
-    return toResponse(pickup, "叫號廣播已發送");
-}
-```
-
-### Step 5 — N8N Cloud Workflow 設定
-
-```
-[Webhook Trigger]
-  Method: POST
-  Path: /pickup-notify
-       ↓
-[Set Node]（組合 WhatsApp 訊息內容）
-  message: "{{$json.message}}"
-  to: "{{$json.phone}}"
-       ↓
-[Twilio Node 或 WhatsApp Business Node]
-  Send message to {{ to }}
-```
-
-### Step 6 — 前端 createPickup 帶入 phone
+### Worker 程式碼（完整，填入憑證即可部署）
 
 ```javascript
-// 廚房 / 前台建立取餐記錄時
-const session = JSON.parse(localStorage.getItem('canteen_session'));
-await fetch('/api/pickups/create', {
-    method: 'POST',
-    body: JSON.stringify({
-        itemId: itemId,
-        expectedTime: expectedTime,
-        method: pickupCode,
-        phone: session?.phone ?? null   // ← 新增
-    })
-});
+const JAVA_API_BASE = "https://your-zeabur-domain.zeabur.app";
+const WHATSAPP_TOKEN = "YOUR_PERMANENT_ACCESS_TOKEN";
+const PHONE_NUMBER_ID = "YOUR_PHONE_NUMBER_ID";
+const VERIFY_TOKEN = "YOUR_WEBHOOK_VERIFY_TOKEN";
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    // Meta webhook 驗證（初次設定時調用）
+    if (request.method === "GET") {
+      const mode      = url.searchParams.get("hub.mode");
+      const token     = url.searchParams.get("hub.verify_token");
+      const challenge = url.searchParams.get("hub.challenge");
+      if (mode === "subscribe" && token === VERIFY_TOKEN)
+        return new Response(challenge, { status: 200 });
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    // 收到 WhatsApp 訊息
+    if (request.method === "POST") {
+      const body = await request.json();
+      const msg = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      if (!msg || msg.type !== "text") return new Response("OK");
+
+      const from = msg.from;                         // 客人電話
+      const text = msg.text.body.trim().toUpperCase(); // 取餐碼
+
+      // 查詢 Java API
+      const apiRes = await fetch(
+        `${JAVA_API_BASE}/api/pickups/status?code=${encodeURIComponent(text)}`
+      );
+      const data = apiRes.ok ? await apiRes.json() : null;
+
+      // 組合回覆訊息
+      let reply;
+      if (!data || data.status === "NOT_FOUND") {
+        reply = `找不到取餐碼 (${text})，請確認後再試。`;
+      } else if (data.status === "READY") {
+        reply = `取餐碼 (${data.code}) 已完成，${data.expectedTime ?? ""} 可取餐。`;
+      } else {
+        reply = `取餐碼 (${data.code}) 這單號還在製作中，請稍候。`;
+      }
+
+      // 發送 WhatsApp 回覆
+      await fetch(
+        `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: from,
+            type: "text",
+            text: { body: reply },
+          }),
+        }
+      );
+
+      return new Response("OK");
+    }
+
+    return new Response("Method Not Allowed", { status: 405 });
+  },
+};
+```
+
+### 部署步驟
+1. 登入 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Workers & Pages → Create Worker
+3. 貼上上方程式碼，填入 4 個憑證常數
+4. Deploy → 取得 Worker URL（例如 `https://canteen-wa.yourname.workers.dev`）
+
+---
+
+## 五、Meta Webhook 設定步驟
+
+1. Meta Developer Console → 你的 App → WhatsApp → Configuration
+2. Webhook URL：填入 Cloudflare Worker URL
+3. Verify Token：填入你設定的 `VERIFY_TOKEN`
+4. 勾選 `messages` subscription
+5. 點 Verify and Save
+
+---
+
+## 六、環境變數總覽（填入 Worker）
+
+```
+JAVA_API_BASE       = https://your-zeabur-domain.zeabur.app
+WHATSAPP_TOKEN      = EAAxxxxxxx...（Permanent Token）
+PHONE_NUMBER_ID     = 1234567890123（純數字）
+VERIFY_TOKEN        = my-canteen-secret-2026（自訂）
 ```
 
 ---
 
-## 八、決策清單（實作前需確認）
+## 七、測試方法
 
-- [ ] **電話來源方案**：採用方案 A（改 entity）/ B（Feign）/ C（N8N 反查）？
-- [ ] **N8N 部署**：N8N Cloud 免費版 或 自建？
-- [ ] **WhatsApp Provider**：Twilio 或 Meta Business API？
-- [ ] **N8N Webhook URL**：設定後填入 `application.yml`
-- [ ] **Twilio/Meta API Key**：申請後設定到 N8N Cloud
+部署後，用手機發 WhatsApp 訊息給你的 Business 號碼：
+- 輸入有效取餐碼 → 應收到狀態回覆
+- 輸入無效碼 → 應收到「找不到取餐碼」
 
 ---
 
-## 九、相關檔案路徑
+## 八、記憶體影響
 
-| 檔案 | 路徑 |
-|------|------|
-| Pickup Service（觸發點）| `restaurant-app/src/main/java/com/restaurant/pickup/service/MealPickupService.java` |
-| Pickup Controller | `restaurant-app/src/main/java/com/restaurant/pickup/controller/MealPickupController.java` |
-| Pickup Entity | `restaurant-app/src/main/java/com/restaurant/pickup/entity/MealPickup.java` |
-| Pickup Create DTO | `restaurant-app/src/main/java/com/restaurant/pickup/dto/PickupCreateRequest.java` |
-| App Config | `restaurant-app/src/main/resources/application.yml` |
-| Architecture 說明 | `restaurant-app/src/main/resources/static/architecture.html` |
-
----
-
-## 十、Demo Cart 分析備案（同次討論）
-
-同日評估了 `demo-restaurant-main` 的 Server-side Cart，決定**不移植**，原因：
-
-1. 價格硬碼（`$40`），需 Feign 取真實價格
-2. Deposit 邏輯錯誤：`finalTotal = baseTotal + depositAmt`（應為先付部分，非加項）
-3. 認證用 `X-User-Id` header，與現行 Spring Security 不符
-4. 校園 POS 單一餐期，localStorage Cart 已足夠，不需 server-side Cart
-
-決策已記錄於 `architecture.html` 第 3.4 節。
+| 服務 | RAM |
+|------|-----|
+| postgres | 400 MB |
+| restaurant-app | 700 MB |
+| nginx | ~50 MB |
+| Cloudflare Workers | **0 MB**（雲端執行） |
+| **合計** | **~1.15 GB** ✅ |
 
 ---
 
-*備案建立：2026-06-09 | 作者：Claude Code*
+*更新：2026-06-10 | 後端 endpoint 已合併至 main branch（commit 642ddd1）*

@@ -530,7 +530,23 @@
           try {
             const res = await fetch(`${ORDER_BASE}/orders/${orderId}/status?status=COMPLETE`, { method: "PUT" });
             if (!res.ok) throw new Error("HTTP " + res.status);
-            lastOrdersJson = ""; // force re-render after status change
+
+            const order = todayOrders.find(o => o.orderId === orderId);
+            if (order && order.items && order.items.length > 0) {
+              const phoneLast4 = order.phone ? String(order.phone).slice(-4) : String(order.userId % 10000).padStart(4, "0");
+              const orderLast3 = String(orderId % 1000).padStart(3, "0");
+              const pickupCode = `${phoneLast4}-${orderLast3}`;
+              const expectedTime = new Date().toISOString();
+              await Promise.allSettled(order.items.map(item =>
+                fetch(`${PICKUP_BASE}/api/pickups/create`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ itemId: item.itemId, expectedTime, method: pickupCode })
+                })
+              ));
+            }
+
+            lastOrdersJson = "";
             await renderOrderList();
           } catch (e) {
             alert("更新失敗：" + e.message);
