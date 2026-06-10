@@ -19,5 +19,7 @@ public class DishResponse {
     private Integer balance;
     private Integer preparationTime;
     private LocalDate menuDate;
+    private String category;
+    private boolean published;
     private Status status;
 }

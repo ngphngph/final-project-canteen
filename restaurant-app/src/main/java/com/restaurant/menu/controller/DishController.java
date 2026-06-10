@@ -88,9 +88,9 @@ public class DishController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN_USER', 'KITCHEN_USER')")
-    public List<DishResponse> listByDate(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return dishService.listByDate(date);
+    public List<DishResponse> list(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return date != null ? dishService.listByDate(date) : dishService.listAll();
     }
 
     @GetMapping("/today")

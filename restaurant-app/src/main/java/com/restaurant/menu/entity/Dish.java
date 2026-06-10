@@ -42,6 +42,12 @@ public class Dish {
     @Column(nullable = false)
     private LocalDate menuDate;
 
+    @Column(length = 20, columnDefinition = "varchar(20) default 'NORMAL'")
+    private String category = "NORMAL";
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean published = false;
+
     @Column(nullable = false)
     private Integer preparationTime;
 

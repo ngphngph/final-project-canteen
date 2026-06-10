@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Getter @Setter
 public class DishRequest {
@@ -16,6 +15,6 @@ public class DishRequest {
     @NotNull @PositiveOrZero private BigDecimal price;
     @NotNull @PositiveOrZero private Integer initialStock;
     @NotNull @PositiveOrZero private Integer preparationTime;
-    private LocalDate menuDate;
+    private String category;
     private String specialRequestOptions;
 }

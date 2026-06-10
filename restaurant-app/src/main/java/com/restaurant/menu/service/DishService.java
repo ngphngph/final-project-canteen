@@ -74,6 +74,8 @@ public class DishService {
         Dish dish = findEntity(id);
         dish.setName(request.getName());
         dish.setPrice(request.getPrice());
+        if (request.getCategory() != null) dish.setCategory(request.getCategory());
+        if (request.getPublished() != null) dish.setPublished(request.getPublished());
         return toResponse(dishRepository.save(dish));
     }
 
@@ -127,11 +129,15 @@ public class DishService {
     }
 
     @Transactional(readOnly = true)
+    public List<DishResponse> listAll() {
+        return dishRepository.findAll().stream().map(DishService::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
     @Cacheable("dishes-today")
     public List<DishResponse> getTodayForClient() {
         orderWindowService.assertOpen();
-        LocalDate today = LocalDate.now(orderWindowService.getZoneId());
-        return dishRepository.findTodayAvailable(today).stream().map(DishService::toResponse).toList();
+        return dishRepository.findTodayAvailable().stream().map(DishService::toResponse).toList();
     }
 
     private Dish findEntity(Long id) {
@@ -145,7 +151,8 @@ public class DishService {
         dish.setPrice(request.getPrice());
         dish.setInitialStock(request.getInitialStock());
         dish.setPreparationTime(request.getPreparationTime());
-        dish.setMenuDate(request.getMenuDate() != null ? request.getMenuDate() : LocalDate.now());
+        dish.setMenuDate(LocalDate.now());
+        dish.setCategory(request.getCategory() != null ? request.getCategory() : "NORMAL");
         dish.setSpecialRequestOptions(request.getSpecialRequestOptions());
         if (dish.getBalance() == null) {
             dish.setBalance(request.getInitialStock());
@@ -164,6 +171,8 @@ public class DishService {
                 .balance(dish.getBalance())
                 .preparationTime(dish.getPreparationTime())
                 .menuDate(dish.getMenuDate())
+                .category(dish.getCategory())
+                .published(dish.isPublished())
                 .status(dish.getStatus())
                 .build();
     }

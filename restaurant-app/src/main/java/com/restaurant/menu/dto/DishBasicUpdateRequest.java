@@ -12,4 +12,6 @@ import java.math.BigDecimal;
 public class DishBasicUpdateRequest {
     @NotBlank private String name;
     @NotNull @PositiveOrZero private BigDecimal price;
+    private String category;
+    private Boolean published;
 }

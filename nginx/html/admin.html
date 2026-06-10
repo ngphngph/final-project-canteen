@@ -140,6 +140,8 @@
                 <th class="text-left px-4 py-3">價格</th>
                 <th class="text-left px-4 py-3">庫存（唯讀・廚房管理）</th>
                 <th class="text-left px-4 py-3">狀態</th>
+                <th class="text-left px-4 py-3">分類</th>
+                <th class="text-center px-4 py-3">上架</th>
                 <th class="text-left px-4 py-3">Special Request</th>
                 <th class="text-left px-4 py-3">照片</th>
                 <th class="text-left px-4 py-3">操作</th>
@@ -239,8 +241,16 @@
           <label class="block text-sm"><span class="text-slate-600">初始庫存</span>
             <input id="nd-stock" type="number" min="0" class="mt-1 border rounded px-2 py-1.5 w-full" value="50" /></label>
         </div>
-        <label class="block text-sm"><span class="text-slate-600">供應日期（留空為今天）</span>
-          <input id="nd-date" type="date" class="mt-1 border rounded px-2 py-1.5 w-full" /></label>
+        <label class="block text-sm"><span class="text-slate-600">分類</span>
+          <select id="nd-category" class="mt-1 border rounded px-2 py-1.5 w-full bg-white">
+            <option value="NORMAL">一般</option>
+            <option value="MONDAY">週一</option>
+            <option value="TUESDAY">週二</option>
+            <option value="WEDNESDAY">週三</option>
+            <option value="THURSDAY">週四</option>
+            <option value="FRIDAY">週五</option>
+            <option value="SATURDAY">週六</option>
+          </select></label>
         <label class="block text-sm"><span class="text-slate-600">照片 *（jpg/png，建議 600–800px）</span>
           <input id="nd-image" type="file" accept="image/*" class="mt-1 w-full text-sm" /></label>
         <label class="block text-sm"><span class="text-slate-600">Special Request（逗號分隔，可留空）</span>
@@ -304,12 +314,30 @@
 
     function renderAdminTables() {
       const dishBody = document.getElementById("dishTableBody");
+      const categoryOptions = [
+        { value: "NORMAL",    label: "一般" },
+        { value: "MONDAY",    label: "週一" },
+        { value: "TUESDAY",   label: "週二" },
+        { value: "WEDNESDAY", label: "週三" },
+        { value: "THURSDAY",  label: "週四" },
+        { value: "FRIDAY",    label: "週五" },
+        { value: "SATURDAY",  label: "週六" }
+      ];
       dishBody.innerHTML = state.dishes.map(d => `
         <tr class="border-t">
           <td class="px-4 py-3"><input id="dish-name-${d.id}" class="border rounded px-2 py-1 w-40" value="${d.name}" /></td>
           <td class="px-4 py-3"><input id="dish-price-${d.id}" class="border rounded px-2 py-1 w-24" type="number" step="0.01" value="${d.price}" /></td>
           <td class="px-4 py-3"><span class="inline-flex items-center px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-medium">尚餘 ${d.balance}</span></td>
           <td class="px-4 py-3">${dishStatusBadge(d.status)}</td>
+          <td class="px-4 py-3">
+            <select id="dish-category-${d.id}" class="border rounded px-2 py-1 text-sm">
+              ${categoryOptions.map(o => `<option value="${o.value}" ${(d.category || "NORMAL") === o.value ? "selected" : ""}>${o.label}</option>`).join("")}
+            </select>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <input type="checkbox" id="dish-published-${d.id}" ${d.published ? "checked" : ""}
+              class="w-5 h-5 accent-green-600 cursor-pointer" title="勾選後按「儲存全部資料」即上架至點餐頁" />
+          </td>
           <td class="px-4 py-3"><input id="dish-options-${d.id}" class="border rounded px-2 py-1 w-56" value="${(d.options || []).join(", ")}" /></td>
           <td class="px-4 py-3">
             <img src="${resolveItemImage(d)}" alt="" class="h-14 w-14 object-cover rounded border mb-1" />
@@ -387,6 +415,8 @@
         const keepImageFileName = d.imageFileName;
         d.name = nameEl.value.trim();
         d.price = Number(document.getElementById(`dish-price-${d.id}`).value);
+        d.category = document.getElementById(`dish-category-${d.id}`).value;
+        d.published = document.getElementById(`dish-published-${d.id}`).checked;
         // 庫存量由廚房管理，Admin 不可更改：保留現有 balance
         d.options = parseOptions(document.getElementById(`dish-options-${d.id}`).value);
         if (keepImageKey) d.imageStorageKey = keepImageKey;
@@ -443,6 +473,8 @@
         price: Number(d.price) || 0,
         balance: d.balance ?? 0,
         status: d.status || "SOLD_OUT",
+        category: d.category || "NORMAL",
+        published: d.published || false,
         imageUrl: d.imageUrl || "",
         image: d.imageUrl || "",
         options: d.specialRequestOptions
@@ -470,10 +502,9 @@
     }
 
     async function loadMenuFromApi() {
-      const today = new Date().toISOString().slice(0, 10);
       try {
         const [dishRes, drinkRes] = await Promise.all([
-          fetch(`/api/dishes?date=${today}`, { headers: adminHeaders() }),
+          fetch(`/api/dishes`, { headers: adminHeaders() }),
           fetch(`/api/drinks`, { headers: adminHeaders() })
         ]);
         if (dishRes.ok) {
@@ -490,8 +521,7 @@
 
     function addDish() {
       if (!adminUser) { alert("請先設定管理員帳號密碼"); return; }
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById("nd-date").value = today;
+      document.getElementById("nd-category").value = "NORMAL";
       document.getElementById("nd-name").value = "";
       document.getElementById("nd-code").value = "";
       document.getElementById("nd-price").value = "60";
@@ -507,12 +537,12 @@
       const code = rawCode || name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 10) || "DISH";
       const price = Number(document.getElementById("nd-price").value) || 0;
       const stock = Number(document.getElementById("nd-stock").value) || 0;
-      const date = document.getElementById("nd-date").value || new Date().toISOString().slice(0, 10);
+      const category = document.getElementById("nd-category").value || "NORMAL";
       const options = document.getElementById("nd-options").value.trim();
       const imgInput = document.getElementById("nd-image");
       if (!name) { alert("請填入菜式名稱"); return; }
       if (!imgInput.files || !imgInput.files[0]) { alert("請選擇照片"); return; }
-      const data = { name, code, price, initialStock: stock, preparationTime: 10, menuDate: date,
+      const data = { name, code, price, initialStock: stock, preparationTime: 10, category,
         specialRequestOptions: options || null };
       const fd = new FormData();
       fd.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));
@@ -569,7 +599,7 @@
           const r1 = await fetch(`/api/dishes/${d.id}/basic-info`, {
             method: "PATCH",
             headers: adminHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({ name: d.name, price: d.price })
+            body: JSON.stringify({ name: d.name, price: d.price, category: d.category, published: d.published })
           });
           if (!r1.ok) errors.push(`Dish #${d.id} 基本資料：HTTP ${r1.status}`);
           const optStr = (d.options || []).join(", ");
