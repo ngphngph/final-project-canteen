@@ -242,6 +242,7 @@
         document.getElementById("kitchenLoginOverlay").classList.add("hidden");
         document.getElementById("kitchenMainContent").classList.remove("hidden");
         loadDishesFromApi();
+        refreshKitchenDashboard();
       } catch (_) {
         errEl.textContent = "無法連線至伺服器，請稍後再試";
         errEl.classList.remove("hidden");
@@ -482,23 +483,13 @@
       const el = document.getElementById("orderList");
       el.innerHTML = '<p class="p-6 text-sm text-slate-500 text-center">載入中…</p>';
       try {
-        const r = await fetch(`${ORDER_BASE}/orders`);
+        const r = await fetch(`${ORDER_BASE}/orders/today`);
         if (!r.ok) throw new Error("HTTP " + r.status);
-        const all = await r.json();
-        const todayStr = new Date().toDateString();
-        const filtered = all
-          .filter(o => { const d = parseJavaDate(o.createdAt); return !d || d.toDateString() === todayStr; })
-          .sort((a, b) => {
-            const ta = parseJavaDate(b.createdAt), tb = parseJavaDate(a.createdAt);
-            return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
-          });
-        const itemResults = await Promise.all(
-          filtered.map(o =>
-            fetch(`${ORDER_BASE}/orders/${o.orderId}/items`)
-              .then(r => r.ok ? r.json() : []).catch(() => [])
-          )
-        );
-        todayOrders = filtered.map((o, i) => ({ ...o, items: itemResults[i] }));
+        const orders = await r.json();
+        todayOrders = orders.sort((a, b) => {
+          const ta = parseJavaDate(b.createdAt), tb = parseJavaDate(a.createdAt);
+          return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
+        });
       } catch (e) {
         todayOrders = [];
         el.innerHTML = `<p class="p-6 text-sm text-red-400 text-center">訂單載入失敗：${e.message}</p>`;
@@ -528,11 +519,12 @@
         document.getElementById("kitchenLoginOverlay").classList.add("hidden");
         document.getElementById("kitchenMainContent").classList.remove("hidden");
         loadDishesFromApi();
+        refreshKitchenDashboard();
       }
     } catch (_) {}
 
     refreshKitchenDashboard();
-    setInterval(refreshKitchenDashboard, 30000); // auto-refresh every 30 s
+    setInterval(refreshKitchenDashboard, 10000); // auto-refresh every 10 s
 
     function resolvePickupCode(code) {
       const parts = code.toUpperCase().split("-");
