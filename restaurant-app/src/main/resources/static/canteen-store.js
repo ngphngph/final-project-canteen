@@ -521,7 +521,6 @@ function loadOrderWindow() {
 function saveOrderWindow(cfg) {
   const merged = _normalizeOrderWindow({ ...CANTEEN_ORDER_WINDOW_DEFAULT, ...(cfg || {}) });
   localStorage.setItem(CANTEEN_ORDER_WINDOW_KEY, JSON.stringify(merged));
-  notifyStoreUpdated();
   return merged;
 }
 

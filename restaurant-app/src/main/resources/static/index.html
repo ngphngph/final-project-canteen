@@ -526,7 +526,13 @@
     }
 
     // 渲染 Dish 卡片
+    let _lastDishesJson = "";
+    let _lastDrinksJson = "";
+
     function renderDishes() {
+      const json = JSON.stringify(dishes);
+      if (json === _lastDishesJson) return;
+      _lastDishesJson = json;
       const el = document.getElementById("dishList");
       el.innerHTML = dishes.map(d => `
         <div class="present-menu-card text-center ${d.status === "SOLD_OUT" ? "opacity-70" : ""}">
@@ -558,6 +564,9 @@
 
     // 渲染 Drink 卡片（Drink 沒有存貨限制）
     function renderDrinks() {
+      const json = JSON.stringify(drinks);
+      if (json === _lastDrinksJson) return;
+      _lastDrinksJson = json;
       const el = document.getElementById("drinkList");
       el.innerHTML = drinks.map(d => `
         <div class="present-menu-card text-center">
