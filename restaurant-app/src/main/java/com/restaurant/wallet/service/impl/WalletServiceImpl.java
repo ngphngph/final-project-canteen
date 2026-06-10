@@ -62,6 +62,11 @@ public class WalletServiceImpl implements WalletService {
     }
 
     private WalletTransactionResp adjust(Long walletId, WalletAdjustReq req, TransactionType type) {
+        if (req.idempotencyKey() != null) {
+            var existing = transactionRepository.findByIdempotencyKey(req.idempotencyKey());
+            if (existing.isPresent()) return walletMapper.map(existing.get());
+        }
+
         if (req.amount() == null || req.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("amount must be positive, got: " + req.amount());
         }
