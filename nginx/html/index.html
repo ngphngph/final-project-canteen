@@ -776,6 +776,12 @@
       if (!session) { alert("請先登入後再下單。"); openLoginModal(); return; }
 
       const storeState = loadCanteenState();
+      // Merge in any API dishes not yet in localStorage (e.g. newly added today)
+      dishes.forEach(d => {
+        if (!storeState.dishes.find(x => x.id === d.id)) {
+          storeState.dishes.push({ id: d.id, name: d.name, balance: d.balance, status: d.status });
+        }
+      });
       const stockCheck = validateOrderStock(storeState, cart);
       if (!stockCheck.ok) { alert(stockCheck.message); reloadPublishedMenu(); return; }
 
