@@ -729,51 +729,101 @@
       modal.classList.remove("flex");
     }
 
-    function submitOrder() {
+    async function submitOrder() {
       if (!assertOrderWindowOpen()) return;
-      if (!cart.length) {
-        alert("購物車是空的，請先加入菜品或飲品。");
-        return;
-      }
+      if (!cart.length) { alert("購物車是空的，請先加入菜品或飲品。"); return; }
+
+      const session = getSession();
+      if (!session) { alert("請先登入後再下單。"); openLoginModal(); return; }
+
       const storeState = loadCanteenState();
       const stockCheck = validateOrderStock(storeState, cart);
-      if (!stockCheck.ok) {
-        alert(stockCheck.message);
-        reloadPublishedMenu();
+      if (!stockCheck.ok) { alert(stockCheck.message); reloadPublishedMenu(); return; }
+
+      const totals = calculateTotals();
+      const estimatedDeductAmt = cart.length >= 4 ? 50 : totals.total;
+
+      // Pre-check balance so we don't create an orphan PENDING_PAY order in DB
+      let wallet = _walletData;
+      if (!wallet) {
+        try {
+          const wr = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+          if (wr.ok) { wallet = await wr.json(); _walletData = wallet; _setBalanceDisplay(wallet.balance); }
+        } catch (_) {}
+      }
+      if (wallet && estimatedDeductAmt > 0 && Number(wallet.balance) < estimatedDeductAmt) {
+        alert(`餘額不足，無法下單。\n目前餘額：$${wallet.balance}\n需支付：$${estimatedDeductAmt}\n\n請先充值後再試。`);
         return;
       }
-      const totals = calculateTotals();
-      const orderId = Date.now();
-      const _sess = getSession();
-      const order = {
-        id: orderId,
-        role: frontendRole,
-        phone: _sess ? _sess.phone : null,
-        userId: _sess ? _sess.userId : null,
-        createdAt: new Date().toISOString(),
-        items: cart.map(c => ({ ...c })),
-        total: totals.total
-      };
-      try {
-        appendOrder(order);
-      } catch (_) {
-        /* 訂單紀錄寫入失敗不阻擋送出 */
-      }
-      deductStockForOrder(storeState, cart);
-      // Mirror deduction in the local API cache so re-render shows correct stock
-      cart.filter(c => c.type === "dish").forEach(c => {
-        const d = dishes.find(x => x.id === c.id);
-        if (d) d.balance = Math.max(0, (d.balance || 0) - 1);
+
+      // Group cart items by (menuId + note + unitPrice), apply free-drink pricing
+      const linePrices = getOrderLinePricing(cart);
+      const grouped = new Map();
+      cart.forEach((item, idx) => {
+        const unitPrice = linePrices[idx];
+        const note = (item.specialRequestOptions || []).join(", ").slice(0, 200);
+        const key = `${item.id}__${note}__${unitPrice}`;
+        if (!grouped.has(key)) grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note });
+        grouped.get(key).quantity += 1;
       });
-      dishes.forEach(d => { d.status = d.balance > 0 ? "ON_LIST" : "SOLD_OUT"; });
-      cart.length = 0;
-      reloadPublishedMenu();
-      renderCart();
-      closePreviewModal();
-      renderMyOrders();
-      alert(
-        `訂單已送出！\n訂單編號：${orderId}\n總計：$${totals.total}\n菜品庫存已更新。\n感謝您的訂購，謝謝﹗`
-      );
+
+      try {
+        const orderRes = await fetch(`${ORDER_BASE}/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: session.userId, items: [...grouped.values()] })
+        });
+        if (!orderRes.ok) {
+          const err = await orderRes.json().catch(() => ({}));
+          const msg = err.message || "";
+          alert(msg.toLowerCase().includes("insufficient")
+            ? `餘額不足，無法下單。\n需支付：$${estimatedDeductAmt}\n\n請先充值後再試。`
+            : "下單失敗：" + (msg || orderRes.status));
+          return;
+        }
+        const backendOrder = await orderRes.json();
+
+        // Refresh wallet balance after backend deduction
+        try {
+          const wr2 = await fetch(`${WALLET_BASE}/wallets/user/${session.userId}`);
+          if (wr2.ok) { _walletData = await wr2.json(); _setBalanceDisplay(_walletData.balance); }
+        } catch (_) {}
+
+        // Save to order history with backend ID (already paid — no "待結算" state)
+        try {
+          appendOrder({
+            id: backendOrder.orderId,
+            backendOrderId: backendOrder.orderId,
+            role: frontendRole,
+            phone: session.phone,
+            userId: session.userId,
+            createdAt: new Date().toISOString(),
+            items: cart.map(c => ({ ...c })),
+            total: backendOrder.totalAmt,
+            status: _mapBackendStatus(backendOrder.orderStatus),
+            paidAt: new Date().toISOString()
+          });
+        } catch (_) {}
+
+        // Update local stock display
+        deductStockForOrder(storeState, cart);
+        cart.filter(c => c.type === "dish").forEach(c => {
+          const d = dishes.find(x => x.id === c.id);
+          if (d) d.balance = Math.max(0, (d.balance || 0) - 1);
+        });
+        dishes.forEach(d => { d.status = d.balance > 0 ? "ON_LIST" : "SOLD_OUT"; });
+        cart.length = 0;
+        reloadPublishedMenu();
+        renderCart();
+        closePreviewModal();
+        renderMyOrders();
+
+        const statusLabel = backendOrder.orderStatus === "DEPOSIT_PAID" ? "已付訂金 ($50)" : "已全額付款";
+        alert(`訂單已送出！\n訂單編號：#${backendOrder.orderId}\n總計：$${backendOrder.totalAmt}\n狀態：${statusLabel}\n感謝您的訂購，謝謝！`);
+
+      } catch (_) {
+        alert("下單時發生錯誤，請確認伺服器已啟動後再試。");
+      }
     }
 
     document.getElementById("submitOrderBtn").addEventListener("click", submitOrder);
