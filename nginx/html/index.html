@@ -1150,7 +1150,7 @@
       if (!phone || !password) { alert("請填寫電話與密碼"); return; }
       try {
         for (const role of ["student", "teacher"]) {
-          const res = await fetch(`${LOGIN_BASE}/api/users/login`, {
+          const res = await fetch(`${LOGIN_BASE}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone, password, role })
@@ -1178,7 +1178,7 @@
       const specificId = document.getElementById("registerSpecificId").value.trim();
       if (!phone || !password || !specificId) { alert("請填寫所有欄位"); return; }
       try {
-        const res = await fetch(`${LOGIN_BASE}/api/users/register`, {
+        const res = await fetch(`${LOGIN_BASE}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone, password, role, specificId })
