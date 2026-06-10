@@ -421,43 +421,72 @@
     }
 
     // ── 今日訂單（純 API）──────────────────────────────────
-    let todayOrders = []; // populated by renderOrderList; shared with renderSalesReport / resolvePickupCode
+    let todayOrders = [];
+    let lastOrdersJson = "";
+    const expandedOrders = new Set(); // persist expand state across re-renders
 
     function buildOrderRows(orders) {
       if (!orders.length) return '<p class="p-6 text-sm text-slate-500 text-center">今日尚無訂單</p>';
       return orders.map(o => {
-        const status   = o.orderStatus;
-        const active   = ["PENDING_PAY","DEPOSIT_PAID","FULLY_PAID"].includes(status);
+        const status     = o.orderStatus;
+        const active     = ["PENDING_PAY","DEPOSIT_PAID","FULLY_PAID"].includes(status);
         const phoneLast4 = o.userId ? String(o.userId % 10000).padStart(4, "0") : "GUST";
         const orderLast3 = String(o.orderId % 1000).padStart(3, "0");
         const pickupCode = `${phoneLast4}-${orderLast3}`;
-        const itemSummary = (o.items || [])
-          .map(i => `${getMenuItemName(i.menuId)} x${i.quantity || 1}`)
-          .join("、") || "—";
-        const notesLines = (o.items || [])
-          .filter(i => i.specialNote)
-          .map(i => `<p class="text-xs text-slate-500">${getMenuItemName(i.menuId)}：${i.specialNote}</p>`)
-          .join("");
+        const itemCount  = (o.items || []).reduce((s, i) => s + (i.quantity || 1), 0);
+        const isExpanded = expandedOrders.has(o.orderId);
+        const detailRows = (o.items || []).map(i => `
+          <tr class="border-t border-slate-700">
+            <td class="py-1.5 pr-3 text-slate-300">${getMenuItemName(i.menuId)}</td>
+            <td class="py-1.5 text-center text-slate-400 w-10">x${i.quantity || 1}</td>
+            <td class="py-1.5 text-right text-slate-400 w-16">$${Number(i.unitPrice || 0).toFixed(0)}</td>
+            <td class="py-1.5 pl-3 text-slate-500 text-xs">${i.specialNote || ""}</td>
+          </tr>`).join("");
         return `
-          <div class="p-4 flex flex-wrap gap-3 justify-between items-start hover:bg-slate-800/50">
-            <div class="space-y-1">
-              <div class="flex items-center gap-3 flex-wrap">
-                <p class="font-medium text-white">訂單 #${o.orderId}</p>
-                <span class="text-xs font-mono bg-slate-700 text-amber-300 px-2 py-0.5 rounded">取餐碼 ${pickupCode}</span>
+          <div class="border-b border-slate-700 last:border-0">
+            <div class="p-4 flex flex-wrap gap-3 justify-between items-start hover:bg-slate-800/50 cursor-pointer select-none"
+                 onclick="toggleOrderDetail(${o.orderId}, this)">
+              <div class="space-y-1 flex-1 min-w-0">
+                <div class="flex items-center gap-3 flex-wrap">
+                  <p class="font-medium text-white">訂單 #${o.orderId}</p>
+                  <span class="text-xs font-mono bg-slate-700 text-amber-300 px-2 py-0.5 rounded">取餐碼 ${pickupCode}</span>
+                  <span class="text-xs text-slate-500">${itemCount} 項 · $${o.totalAmt || 0}</span>
+                </div>
+                <p class="text-xs text-slate-400">用戶 #${o.userId} · ${fmtTime(o.createdAt)}</p>
               </div>
-              <p class="text-xs text-slate-400">用戶 #${o.userId} · $${o.totalAmt || 0} · ${fmtTime(o.createdAt)}</p>
-              <p class="text-sm text-slate-300">${itemSummary}</p>
-              ${notesLines}
+              <div class="flex flex-wrap gap-2 items-center" onclick="event.stopPropagation()">
+                ${orderStatusBadge(status)}
+                ${active ? `<button type="button" data-order-id="${o.orderId}"
+                  class="complete-btn present-btn-primary px-3 py-1.5 text-sm">✅ 出餐完成</button>` : ""}
+                <span class="text-slate-500 text-xs pointer-events-none chevron">${isExpanded ? "▲" : "▼"}</span>
+              </div>
             </div>
-            <div class="flex flex-wrap gap-2 items-center">
-              ${orderStatusBadge(status)}
-              ${active
-                ? `<button type="button" data-order-id="${o.orderId}"
-                     class="complete-btn present-btn-primary px-3 py-1.5 text-sm">✅ 出餐完成</button>`
-                : ""}
+            <div id="order-detail-${o.orderId}" class="${isExpanded ? "" : "hidden"} px-4 pb-4 bg-slate-900/40">
+              <table class="w-full text-sm">
+                <thead><tr class="text-left text-xs text-slate-500 border-b border-slate-700">
+                  <th class="pb-1">項目</th><th class="pb-1 text-center w-10">數量</th>
+                  <th class="pb-1 text-right w-16">單價</th><th class="pb-1 pl-3">備注</th>
+                </tr></thead>
+                <tbody>${detailRows}</tbody>
+              </table>
             </div>
           </div>`;
       }).join("");
+    }
+
+    function toggleOrderDetail(orderId, headerEl) {
+      const panel = document.getElementById(`order-detail-${orderId}`);
+      if (!panel) return;
+      const open = expandedOrders.has(orderId);
+      if (open) {
+        expandedOrders.delete(orderId);
+        panel.classList.add("hidden");
+      } else {
+        expandedOrders.add(orderId);
+        panel.classList.remove("hidden");
+      }
+      const chevron = headerEl.querySelector(".chevron");
+      if (chevron) chevron.textContent = !open ? "▲" : "▼";
     }
 
     function bindCompleteButtons(el) {
@@ -469,6 +498,7 @@
           try {
             const res = await fetch(`${ORDER_BASE}/orders/${orderId}/status?status=COMPLETE`, { method: "PUT" });
             if (!res.ok) throw new Error("HTTP " + res.status);
+            lastOrdersJson = ""; // force re-render after status change
             await renderOrderList();
           } catch (e) {
             alert("更新失敗：" + e.message);
@@ -481,17 +511,22 @@
 
     async function renderOrderList() {
       const el = document.getElementById("orderList");
-      el.innerHTML = '<p class="p-6 text-sm text-slate-500 text-center">載入中…</p>';
+      if (!lastOrdersJson) el.innerHTML = '<p class="p-6 text-sm text-slate-500 text-center">載入中…</p>';
       try {
         const r = await fetch(`${ORDER_BASE}/orders/today`);
         if (!r.ok) throw new Error("HTTP " + r.status);
         const orders = await r.json();
-        todayOrders = orders.sort((a, b) => {
+        const sorted = orders.sort((a, b) => {
           const ta = parseJavaDate(b.createdAt), tb = parseJavaDate(a.createdAt);
           return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
         });
+        const newJson = JSON.stringify(sorted);
+        if (newJson === lastOrdersJson) return; // nothing changed — skip re-render
+        lastOrdersJson = newJson;
+        todayOrders = sorted;
       } catch (e) {
         todayOrders = [];
+        lastOrdersJson = "";
         el.innerHTML = `<p class="p-6 text-sm text-red-400 text-center">訂單載入失敗：${e.message}</p>`;
         return;
       }
