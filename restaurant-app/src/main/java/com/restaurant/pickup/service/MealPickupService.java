@@ -2,6 +2,7 @@ package com.restaurant.pickup.service;
 
 import com.restaurant.pickup.dto.PickupCreateRequest;
 import com.restaurant.pickup.dto.PickupResponse;
+import com.restaurant.pickup.dto.PickupStatusResp;
 import com.restaurant.pickup.dto.PickupVerifyRequest;
 import com.restaurant.pickup.entity.MealPickup;
 import com.restaurant.pickup.repository.MealPickupRepository;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -79,6 +82,21 @@ public class MealPickupService {
     public List<PickupResponse> getPendingPickups() {
         return repository.findPendingPickups()
                 .stream().map(p -> toResponse(p, "待取餐")).toList();
+    }
+
+    public PickupStatusResp getStatusByCode(String code) {
+        List<MealPickup> pickups = repository.findByMethod(code.toUpperCase());
+        if (pickups.isEmpty()) return new PickupStatusResp(code, "NOT_FOUND", null);
+        boolean allDone = pickups.stream().allMatch(p -> p.getActualTime() != null);
+        String status = allDone ? "READY" : "PENDING";
+        String expectedTime = pickups.stream()
+                .map(MealPickup::getExpectedTime)
+                .filter(t -> t != null)
+                .findFirst()
+                .map(t -> DateTimeFormatter.ofPattern("HH:mm")
+                        .withZone(ZoneId.of("Asia/Hong_Kong")).format(t))
+                .orElse(null);
+        return new PickupStatusResp(code, status, expectedTime);
     }
 
     public List<PickupResponse> getUnnotified() {

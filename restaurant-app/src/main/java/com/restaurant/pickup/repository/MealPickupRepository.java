@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface MealPickupRepository extends JpaRepository<MealPickup, Long> {
     Optional<MealPickup> findByItemId(Long itemId);
     Optional<MealPickup> findByItemIdAndMethod(Long itemId, String method);
+    List<MealPickup> findByMethod(String method);
     List<MealPickup> findByAdminNotifiedFalse();
 
     @Query("SELECT m FROM MealPickup m WHERE m.actualTime IS NULL AND m.expectedTime < :now")

@@ -2,6 +2,7 @@ package com.restaurant.pickup.controller;
 
 import com.restaurant.pickup.dto.PickupCreateRequest;
 import com.restaurant.pickup.dto.PickupResponse;
+import com.restaurant.pickup.dto.PickupStatusResp;
 import com.restaurant.pickup.dto.PickupVerifyRequest;
 import com.restaurant.pickup.service.MealPickupService;
 import jakarta.validation.Valid;
@@ -26,6 +27,11 @@ public class MealPickupController {
     @PostMapping("/verify")
     public ResponseEntity<PickupResponse> verify(@Valid @RequestBody PickupVerifyRequest req) {
         return ResponseEntity.ok(service.verifyPickup(req));
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<PickupStatusResp> getStatus(@RequestParam String code) {
+        return ResponseEntity.ok(service.getStatusByCode(code));
     }
 
     @GetMapping("/item/{itemId}")
