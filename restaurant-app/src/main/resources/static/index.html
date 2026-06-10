@@ -460,35 +460,51 @@
       };
     }
 
+    let _allOrdersJson = "";
+
+    async function _fetchAllOrders() {
+      const session = getSession();
+      if (!session) return loadOrders().sort((a, b) => b.id - a.id);
+      try {
+        const res = await fetch(`${ORDER_BASE}/orders/user/${session.userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          return data.map(o => _backendOrderToDisplay(o, session))
+                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+      } catch (_) {}
+      return loadOrders().sort((a, b) => b.id - a.id);
+    }
+
+    function _renderAllOrdersContent(orders) {
+      const content = document.getElementById("allOrdersContent");
+      if (!content) return;
+      content.innerHTML = orders.length
+        ? orders.map(o => renderOrderCardHtml(o, true)).join("")
+        : '<p class="text-sm text-slate-400 text-center py-6">尚無訂單記錄</p>';
+    }
+
     async function openAllOrdersModal() {
       const modal = document.getElementById("allOrdersModal");
       const content = document.getElementById("allOrdersContent");
       modal.classList.remove("hidden");
       modal.classList.add("flex");
       content.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">載入中…</p>';
+      _allOrdersJson = "";  // force render on open
+      const orders = await _fetchAllOrders();
+      const newJson = JSON.stringify(orders);
+      _allOrdersJson = newJson;
+      _renderAllOrdersContent(orders);
+    }
 
-      const session = getSession();
-      let orders = [];
-
-      if (session) {
-        try {
-          const res = await fetch(`${ORDER_BASE}/orders/user/${session.userId}`);
-          if (res.ok) {
-            const data = await res.json();
-            orders = data
-              .map(o => _backendOrderToDisplay(o, session))
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          }
-        } catch (_) {
-          orders = loadOrders().sort((a, b) => b.id - a.id);
-        }
-      } else {
-        orders = loadOrders().sort((a, b) => b.id - a.id);
-      }
-
-      content.innerHTML = orders.length
-        ? orders.map(o => renderOrderCardHtml(o, true)).join("")
-        : '<p class="text-sm text-slate-400 text-center py-6">尚無訂單記錄</p>';
+    async function silentRefreshAllOrdersModal() {
+      const modal = document.getElementById("allOrdersModal");
+      if (!modal || modal.classList.contains("hidden")) return;
+      const orders = await _fetchAllOrders();
+      const newJson = JSON.stringify(orders);
+      if (newJson === _allOrdersJson) return; // nothing changed — no flicker
+      _allOrdersJson = newJson;
+      _renderAllOrdersContent(orders);
     }
 
     function closeAllOrdersModal() {
@@ -950,10 +966,7 @@
       reloadPublishedMenu();
       renderMyOrders();
       updateOrderWindowBadge();
-      const modal = document.getElementById("allOrdersModal");
-      if (modal && !modal.classList.contains("hidden")) {
-        openAllOrdersModal();
-      }
+      silentRefreshAllOrdersModal();
     }
 
     // ── 錢包 ────────────────────────────────────────
