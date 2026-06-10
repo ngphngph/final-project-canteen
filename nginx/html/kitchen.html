@@ -360,14 +360,20 @@
       return map[status] || `<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">${status}</span>`;
     }
 
-    function getMenuItemName(menuId, menuType) {
+    function getMenuItemName(menuId, menuType, unitPrice) {
       if (menuType) {
         const key = `${menuType}_${menuId}`;
         if (menuCache[key]) return menuCache[key];
       }
-      // fallback: try both types (for old orders without menuType)
-      if (menuCache[`DISH_${menuId}`]) return menuCache[`DISH_${menuId}`];
-      if (menuCache[`DRINK_${menuId}`]) return menuCache[`DRINK_${menuId}`];
+      // Old orders have no menuType. Use $0 price as signal it's a free drink.
+      const dishName  = menuCache[`DISH_${menuId}`];
+      const drinkName = menuCache[`DRINK_${menuId}`];
+      if (dishName && !drinkName) return dishName;
+      if (drinkName && !dishName) return drinkName;
+      if (dishName && drinkName) {
+        // ID collision — prefer drink if price is 0 (free drink), else prefer dish
+        return (Number(unitPrice) === 0) ? drinkName : dishName;
+      }
       const d = state.dishes.find(x => x.id === menuId);
       if (d) return d.name;
       const dr = (state.drinks || []).find(x => x.id === menuId);
@@ -416,7 +422,7 @@
       const revenue   = todayOrders.reduce((s, o) => s + Number(o.totalAmt || 0), 0);
       const dishCount = {};
       todayOrders.forEach(o => (o.items || []).forEach(i => {
-        const name = getMenuItemName(i.menuId, i.menuType);
+        const name = getMenuItemName(i.menuId, i.menuType, i.unitPrice);
         dishCount[name] = (dishCount[name] || 0) + (i.quantity || 1);
       }));
       const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
@@ -463,7 +469,7 @@
         const isExpanded = expandedOrders.has(o.orderId);
         const detailRows = (o.items || []).map(i => `
           <tr class="border-t border-slate-700">
-            <td class="py-1.5 pr-3 text-slate-300">${getMenuItemName(i.menuId, i.menuType)}</td>
+            <td class="py-1.5 pr-3 text-slate-300">${getMenuItemName(i.menuId, i.menuType, i.unitPrice)}</td>
             <td class="py-1.5 text-center text-slate-400 w-10">x${i.quantity || 1}</td>
             <td class="py-1.5 text-right text-slate-400 w-16">$${Number(i.unitPrice || 0).toFixed(0)}</td>
             <td class="py-1.5 pl-3 text-slate-500 text-xs">${i.specialNote || ""}</td>
@@ -561,6 +567,7 @@
     }
 
     async function refreshKitchenDashboard() {
+      await loadDishesFromApi(); // keep menuCache up-to-date (picks up newly added dishes)
       await renderOrderList();
       renderStockList();
       renderSalesReport();
@@ -614,7 +621,7 @@
       }
 
       const orderId   = order.orderId;
-      const itemSummary = (order.items || []).map(i => `${getMenuItemName(i.menuId, i.menuType)} x${i.quantity || 1}`).join("、") || "—";
+      const itemSummary = (order.items || []).map(i => `${getMenuItemName(i.menuId, i.menuType, i.unitPrice)} x${i.quantity || 1}`).join("、") || "—";
 
       const session = getSession();
       const adminId = session ? session.userId : 0;
