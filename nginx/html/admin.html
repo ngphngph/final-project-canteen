@@ -19,7 +19,38 @@
   </script>
 </head>
 <body class="present-ui present-admin text-slate-800">
-  <div class="min-h-screen flex">
+
+  <!-- Admin Login Overlay -->
+  <div id="adminLoginOverlay" class="fixed inset-0 bg-slate-900/95 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
+      <div class="text-center mb-6">
+        <span class="text-4xl">🍽</span>
+        <h1 class="font-bold text-xl text-slate-800 mt-2">Admin Panel</h1>
+        <p class="text-sm text-slate-500">午餐訂餐系統管理後台</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">帳號</label>
+          <input id="loginAdminUser" type="text" placeholder="admin_user"
+                 onkeydown="if(event.key==='Enter')document.getElementById('loginAdminPass').focus()"
+                 class="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">密碼</label>
+          <input id="loginAdminPass" type="password" placeholder="••••••••"
+                 onkeydown="if(event.key==='Enter')adminLogin()"
+                 class="w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <p id="loginErrMsg" class="text-red-600 text-sm hidden text-center"></p>
+        <button type="button" onclick="adminLogin()"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
+          登入管理後台
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminMainContent" class="min-h-screen flex hidden">
     <aside class="admin-sidebar w-60 shrink-0 hidden md:block">
       <div class="p-5 border-b border-white/10">
         <div class="flex items-center gap-2">
@@ -52,8 +83,8 @@
 
     <main class="flex-1 p-5 space-y-5">
 
-      <!-- 管理員 API 憑證設定 -->
-      <section id="adminCredPanel" class="present-card p-4 border-2 border-amber-300 bg-amber-50">
+      <!-- 管理員 API 憑證設定 (hidden — login handled by overlay) -->
+      <section id="adminCredPanel" class="hidden present-card p-4 border-2 border-amber-300 bg-amber-50">
         <h2 class="font-semibold text-base text-amber-800 mb-2">🔐 管理員 API 憑證</h2>
         <p class="text-sm text-amber-700 mb-3">輸入帳號密碼後，系統將從後端 DB 載入菜單並啟用新增／刪除功能。</p>
         <div class="flex flex-wrap gap-3 items-end">
@@ -188,31 +219,60 @@
       <!-- 用戶充值管理 -->
       <section id="section-recharge" class="present-card p-4 space-y-4">
         <div>
-          <h2 class="font-semibold text-lg text-slate-800 mb-1">用戶充值管理</h2>
-          <p class="text-sm text-slate-500">查詢用戶錢包並為其充值（連線至 wallet-service port 8082）。</p>
+          <h2 class="font-semibold text-lg text-slate-800 mb-1">用戶充值管理 — 現金儲值</h2>
+          <p class="text-sm text-slate-500">輸入電話查詢用戶錢包，選擇現金金額後確認儲值。</p>
         </div>
         <div class="flex flex-wrap gap-3 items-end">
           <label class="block text-sm">
             <span class="text-slate-600">電話號碼（8位）</span>
-            <input id="rc-phone" type="text" maxlength="8" placeholder="12345678" class="mt-1 border rounded-lg px-3 py-2 w-36 text-sm" />
+            <input id="rc-phone" type="text" maxlength="8" placeholder="12345678" class="mt-1 border rounded-lg px-3 py-2 w-36 text-sm"
+              onkeydown="if(event.key==='Enter') lookupWallet()" />
           </label>
-          <button type="button" onclick="lookupWallet()" class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 self-end">查詢錢包</button>
+          <button type="button" onclick="lookupWallet()" class="present-btn-primary px-4 py-2 text-sm self-end">查詢錢包</button>
         </div>
-        <div id="rc-wallet-info" class="hidden border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50">
-          <p class="text-sm text-slate-700">用戶 ID：<span id="rc-userId" class="font-medium"></span>
-             角色：<span id="rc-role" class="font-medium"></span>
-             錢包 ID：<span id="rc-walletId" class="font-medium"></span>
-             目前餘額：<span id="rc-balance" class="font-medium text-brand-green"></span></p>
+        <div id="rc-wallet-info" class="hidden border border-slate-200 rounded-xl p-4 space-y-4 bg-slate-50">
+          <!-- User info -->
+          <div class="flex flex-wrap items-center gap-4 text-sm text-slate-700">
+            <span>用戶 ID：<span id="rc-userId" class="font-semibold"></span></span>
+            <span>角色：<span id="rc-role" class="font-semibold"></span></span>
+            <span>錢包 ID：<span id="rc-walletId" class="font-semibold"></span></span>
+            <span class="text-base">餘額：<span id="rc-balance" class="font-bold text-brand-green text-lg"></span></span>
+          </div>
+          <!-- Quick cash buttons -->
+          <div>
+            <p class="text-xs font-medium text-slate-500 mb-2">快速選擇現金金額</p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" onclick="rcSetCash(50)"
+                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
+                $50
+              </button>
+              <button type="button" onclick="rcSetCash(100)"
+                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
+                $100
+              </button>
+              <button type="button" onclick="rcSetCash(200)"
+                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
+                $200
+              </button>
+              <button type="button" onclick="rcSetCash(500)"
+                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
+                $500
+              </button>
+            </div>
+          </div>
+          <!-- Confirm row -->
           <div class="flex flex-wrap gap-3 items-end">
             <label class="block text-sm">
-              <span class="text-slate-600">充值金額 ($)</span>
-              <input id="rc-amount" type="number" min="1" placeholder="100" class="mt-1 border rounded-lg px-3 py-2 w-32 text-sm" />
+              <span class="text-slate-600">金額 ($)</span>
+              <input id="rc-amount" type="number" min="1" placeholder="自訂金額" class="mt-1 border rounded-lg px-3 py-2 w-32 text-sm" />
             </label>
             <label class="block text-sm flex-1">
               <span class="text-slate-600">備註</span>
-              <input id="rc-desc" type="text" placeholder="Admin 充值" class="mt-1 border rounded-lg px-3 py-2 w-full text-sm" />
+              <input id="rc-desc" type="text" placeholder="現金儲值" class="mt-1 border rounded-lg px-3 py-2 w-full text-sm" />
             </label>
-            <button type="button" onclick="doRecharge()" class="present-btn-primary px-5 py-2 text-sm self-end">確認充值</button>
+            <button type="button" onclick="doRecharge()" class="present-btn-primary px-6 py-2 text-sm self-end font-semibold">
+              確認儲值
+            </button>
           </div>
           <p id="rc-msg" class="text-sm hidden"></p>
         </div>
@@ -463,6 +523,33 @@
       try { sessionStorage.setItem("_au", u); sessionStorage.setItem("_ap", p); } catch (_) {}
       document.getElementById("adminCredPanel").classList.add("hidden");
       loadMenuFromApi();
+    }
+
+    async function adminLogin() {
+      const u = document.getElementById("loginAdminUser").value.trim();
+      const p = document.getElementById("loginAdminPass").value;
+      const errEl = document.getElementById("loginErrMsg");
+      errEl.classList.add("hidden");
+      if (!u || !p) { errEl.textContent = "請填入帳號與密碼"; errEl.classList.remove("hidden"); return; }
+      try {
+        const res = await fetch("/api/menu/dishes", {
+          headers: { "Authorization": "Basic " + btoa(u + ":" + p) }
+        });
+        if (res.status === 401 || res.status === 403) {
+          errEl.textContent = "帳號或密碼錯誤";
+          errEl.classList.remove("hidden");
+          return;
+        }
+        adminUser = u;
+        adminPass = p;
+        try { sessionStorage.setItem("_au", u); sessionStorage.setItem("_ap", p); } catch (_) {}
+        document.getElementById("adminLoginOverlay").classList.add("hidden");
+        document.getElementById("adminMainContent").classList.remove("hidden");
+        loadMenuFromApi();
+      } catch (_) {
+        errEl.textContent = "無法連線至伺服器，請稍後再試";
+        errEl.classList.remove("hidden");
+      }
     }
 
     function apiToDish(d) {
@@ -837,9 +924,8 @@
       if (su && sp) {
         adminUser = su;
         adminPass = sp;
-        document.getElementById("adminUser").value = su;
-        document.getElementById("adminPass").value = sp;
-        document.getElementById("adminCredPanel").classList.add("hidden");
+        document.getElementById("adminLoginOverlay").classList.add("hidden");
+        document.getElementById("adminMainContent").classList.remove("hidden");
         loadMenuFromApi();
       }
     } catch (_) {}
@@ -880,10 +966,15 @@
       }
     }
 
+    function rcSetCash(amount) {
+      document.getElementById("rc-amount").value = amount;
+      document.getElementById("rc-desc").value = "現金儲值";
+    }
+
     async function doRecharge() {
       if (!_walletId) { alert("請先查詢錢包"); return; }
       const amount = Number(document.getElementById("rc-amount").value);
-      const desc   = document.getElementById("rc-desc").value.trim() || "Admin 充值";
+      const desc   = document.getElementById("rc-desc").value.trim() || "現金儲值";
       if (!amount || amount <= 0) { showMsg("rc-msg", "請輸入充值金額", false); return; }
       try {
         const res = await fetch(`${WALLET_BASE}/wallets/${_walletId}/recharge`, {
