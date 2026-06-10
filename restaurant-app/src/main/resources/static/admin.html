@@ -76,8 +76,11 @@
       <header class="admin-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
         <h2 class="font-semibold text-slate-700">午餐訂餐系統 — 管理後台</h2>
         <div class="flex items-center gap-4 text-sm text-slate-600">
-          <span class="relative">🔔 <span class="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">3</span></span>
-          <span class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> 管理員</span>
+          <span id="topbarUsername" class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> 管理員</span>
+          <button type="button" onclick="adminLogout()"
+                  class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors text-xs font-medium">
+            登出
+          </button>
         </div>
       </header>
 
@@ -543,6 +546,8 @@
         adminUser = u;
         adminPass = p;
         try { sessionStorage.setItem("_au", u); sessionStorage.setItem("_ap", p); } catch (_) {}
+        document.getElementById("topbarUsername").innerHTML =
+          `<span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> ${u}`;
         document.getElementById("adminLoginOverlay").classList.add("hidden");
         document.getElementById("adminMainContent").classList.remove("hidden");
         loadMenuFromApi();
@@ -550,6 +555,17 @@
         errEl.textContent = "無法連線至伺服器，請稍後再試";
         errEl.classList.remove("hidden");
       }
+    }
+
+    function adminLogout() {
+      try { sessionStorage.removeItem("_au"); sessionStorage.removeItem("_ap"); } catch (_) {}
+      adminUser = "";
+      adminPass = "";
+      document.getElementById("loginAdminUser").value = "";
+      document.getElementById("loginAdminPass").value = "";
+      document.getElementById("loginErrMsg").classList.add("hidden");
+      document.getElementById("adminMainContent").classList.add("hidden");
+      document.getElementById("adminLoginOverlay").classList.remove("hidden");
     }
 
     function apiToDish(d) {
