@@ -261,11 +261,14 @@
     }
 
     async function loadDishesFromApi() {
-      const today = new Date().toISOString().slice(0, 10);
       try {
-        const res = await fetch(`/api/dishes?date=${today}`, { headers: kitchenHeaders() });
-        if (res.ok) {
-          const apiDishes = await res.json();
+        const [dishRes, drinkRes] = await Promise.all([
+          fetch("/api/dishes",  { headers: kitchenHeaders() }),
+          fetch("/api/drinks",  { headers: kitchenHeaders() })
+        ]);
+        menuCache = {};
+        if (dishRes.ok) {
+          const apiDishes = await dishRes.json();
           state.dishes = apiDishes.map(d => ({
             id: d.id,
             name: d.name,
@@ -279,8 +282,16 @@
               ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
               : []
           }));
-          menuCache = {};
           apiDishes.forEach(d => { menuCache[d.id] = d.name; });
+        }
+        if (drinkRes.ok) {
+          const apiDrinks = await drinkRes.json();
+          state.drinks = apiDrinks.map(d => ({
+            id: d.id, name: d.name, code: d.code || "",
+            price: Number(d.price) || 0, balance: d.balance ?? 0,
+            status: d.status || "SOLD_OUT", imageUrl: d.imageUrl || ""
+          }));
+          apiDrinks.forEach(d => { menuCache[d.id] = d.name; });
         }
       } catch (e) {
         console.warn("菜單 API 載入失敗", e);
