@@ -964,7 +964,7 @@
       const phone = document.getElementById("rc-phone").value.trim();
       if (!phone) { alert("請輸入電話號碼"); return; }
       try {
-        const loginRes = await fetch(`${LOGIN_BASE}/api/users/lookup?phone=${encodeURIComponent(phone)}`);
+        const loginRes = await fetch(`/api/users/lookup?phone=${encodeURIComponent(phone)}`);
         if (!loginRes.ok) { const e = await loginRes.json().catch(() => ({})); alert("查詢用戶失敗：" + (e.message || loginRes.status)); return; }
         const user = await loginRes.json();
         const walletRes = await fetch(`${WALLET_BASE}/wallets/user/${user.userId}`);
