@@ -17,7 +17,38 @@
   </script>
 </head>
 <body class="present-ui present-kitchen">
-  <div class="min-h-screen flex">
+
+  <!-- Kitchen Login Overlay -->
+  <div id="kitchenLoginOverlay" class="fixed inset-0 bg-slate-900/97 flex items-center justify-center z-50">
+    <div class="bg-slate-800 border border-slate-600 rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
+      <div class="text-center mb-6">
+        <span class="text-4xl">👨‍🍳</span>
+        <h1 class="font-bold text-xl text-white mt-2">Kitchen Panel</h1>
+        <p class="text-sm text-slate-400">廚房後台登入</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">帳號</label>
+          <input id="loginKitchenUser" type="text" placeholder="kitchen_user"
+                 onkeydown="if(event.key==='Enter')document.getElementById('loginKitchenPass').focus()"
+                 class="w-full bg-slate-700 border border-slate-500 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">密碼</label>
+          <input id="loginKitchenPass" type="password" placeholder="••••••••"
+                 onkeydown="if(event.key==='Enter')kitchenLogin()"
+                 class="w-full bg-slate-700 border border-slate-500 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+        </div>
+        <p id="kitchenLoginErrMsg" class="text-red-400 text-sm hidden text-center"></p>
+        <button type="button" onclick="kitchenLogin()"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
+          登入廚房後台
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="kitchenMainContent" class="min-h-screen flex hidden">
     <aside class="kitchen-sidebar w-56 shrink-0 hidden md:flex flex-col p-4">
       <div class="flex items-center gap-2 mb-6 pb-4 border-b border-slate-600">
         <span class="text-2xl">👨‍🍳</span>
@@ -45,9 +76,18 @@
           <h1 class="font-bold text-xl text-white">Kitchen 後台</h1>
           <p class="text-xs text-slate-400">今日訂單 / 備貨 / 銷售報告</p>
         </div>
-        <div class="text-sm text-right">
-          <p class="text-emerald-400">系統狀態：正常 ●</p>
-          <p id="kitchenClock" class="text-slate-400 text-xs mt-1"></p>
+        <div class="flex items-center gap-4 text-sm text-right">
+          <div>
+            <p class="text-emerald-400">系統狀態：正常 ●</p>
+            <p id="kitchenClock" class="text-slate-400 text-xs mt-1"></p>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <span id="kitchenTopbarUser" class="text-slate-300 text-xs">廚房用戶</span>
+            <button type="button" onclick="kitchenLogout()"
+                    class="px-3 py-1 rounded border border-slate-600 text-slate-400 hover:bg-red-900/50 hover:border-red-500 hover:text-red-400 transition-colors text-xs font-medium">
+              登出
+            </button>
+          </div>
         </div>
       </header>
 
@@ -97,8 +137,8 @@
           <p id="verify-msg" class="mt-2 text-sm"></p>
         </section>
 
-        <!-- 廚房 API 憑證設定 -->
-        <section id="kitchenCredPanel" class="kitchen-card p-4 border border-amber-500/40 bg-amber-900/20">
+        <!-- 廚房 API 憑證設定 (hidden — login handled by overlay) -->
+        <section id="kitchenCredPanel" class="hidden kitchen-card p-4 border border-amber-500/40 bg-amber-900/20">
           <h2 class="font-semibold text-sm text-amber-400 mb-2">🔐 廚房 API 憑證</h2>
           <div class="flex flex-wrap gap-3 items-end">
             <label class="block text-xs text-slate-400">帳號
@@ -178,6 +218,45 @@
       try { sessionStorage.setItem("_ku", u); sessionStorage.setItem("_kp", p); } catch (_) {}
       document.getElementById("kitchenCredPanel").classList.add("hidden");
       loadDishesFromApi();
+    }
+
+    async function kitchenLogin() {
+      const u = document.getElementById("loginKitchenUser").value.trim();
+      const p = document.getElementById("loginKitchenPass").value;
+      const errEl = document.getElementById("kitchenLoginErrMsg");
+      errEl.classList.add("hidden");
+      if (!u || !p) { errEl.textContent = "請填入帳號與密碼"; errEl.classList.remove("hidden"); return; }
+      try {
+        const res = await fetch("/api/menu/dishes", {
+          headers: { "Authorization": "Basic " + btoa(u + ":" + p) }
+        });
+        if (res.status === 401 || res.status === 403) {
+          errEl.textContent = "帳號或密碼錯誤";
+          errEl.classList.remove("hidden");
+          return;
+        }
+        kitchenUser = u;
+        kitchenPass = p;
+        try { sessionStorage.setItem("_ku", u); sessionStorage.setItem("_kp", p); } catch (_) {}
+        document.getElementById("kitchenTopbarUser").textContent = u;
+        document.getElementById("kitchenLoginOverlay").classList.add("hidden");
+        document.getElementById("kitchenMainContent").classList.remove("hidden");
+        loadDishesFromApi();
+      } catch (_) {
+        errEl.textContent = "無法連線至伺服器，請稍後再試";
+        errEl.classList.remove("hidden");
+      }
+    }
+
+    function kitchenLogout() {
+      try { sessionStorage.removeItem("_ku"); sessionStorage.removeItem("_kp"); } catch (_) {}
+      kitchenUser = "";
+      kitchenPass = "";
+      document.getElementById("loginKitchenUser").value = "";
+      document.getElementById("loginKitchenPass").value = "";
+      document.getElementById("kitchenLoginErrMsg").classList.add("hidden");
+      document.getElementById("kitchenMainContent").classList.add("hidden");
+      document.getElementById("kitchenLoginOverlay").classList.remove("hidden");
     }
 
     async function loadDishesFromApi() {
@@ -403,13 +482,23 @@
       const el = document.getElementById("orderList");
       el.innerHTML = '<p class="p-6 text-sm text-slate-500 text-center">載入中…</p>';
       try {
-        const r = await fetch(`${ORDER_BASE}/orders/today`);
+        const r = await fetch(`${ORDER_BASE}/orders`);
         if (!r.ok) throw new Error("HTTP " + r.status);
-        const data = await r.json();
-        todayOrders = data.sort((a, b) => {
-          const ta = parseJavaDate(b.createdAt), tb = parseJavaDate(a.createdAt);
-          return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
-        });
+        const all = await r.json();
+        const todayStr = new Date().toDateString();
+        const filtered = all
+          .filter(o => { const d = parseJavaDate(o.createdAt); return !d || d.toDateString() === todayStr; })
+          .sort((a, b) => {
+            const ta = parseJavaDate(b.createdAt), tb = parseJavaDate(a.createdAt);
+            return (ta ? ta.getTime() : 0) - (tb ? tb.getTime() : 0);
+          });
+        const itemResults = await Promise.all(
+          filtered.map(o =>
+            fetch(`${ORDER_BASE}/orders/${o.orderId}/items`)
+              .then(r => r.ok ? r.json() : []).catch(() => [])
+          )
+        );
+        todayOrders = filtered.map((o, i) => ({ ...o, items: itemResults[i] }));
       } catch (e) {
         todayOrders = [];
         el.innerHTML = `<p class="p-6 text-sm text-red-400 text-center">訂單載入失敗：${e.message}</p>`;
@@ -435,9 +524,9 @@
       if (su && sp) {
         kitchenUser = su;
         kitchenPass = sp;
-        document.getElementById("kitchenUser").value = su;
-        document.getElementById("kitchenPass").value = sp;
-        document.getElementById("kitchenCredPanel").classList.add("hidden");
+        document.getElementById("kitchenTopbarUser").textContent = su;
+        document.getElementById("kitchenLoginOverlay").classList.add("hidden");
+        document.getElementById("kitchenMainContent").classList.remove("hidden");
         loadDishesFromApi();
       }
     } catch (_) {}
