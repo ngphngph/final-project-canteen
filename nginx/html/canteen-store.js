@@ -653,6 +653,7 @@ function isOrderToday(order) {
 function getTodayOrders() {
   return loadOrders()
     .filter(isOrderToday)
+    .filter(o => !o.id || o.id < 1_000_000_000_000) // skip legacy Date.now() IDs
     .sort((a, b) => b.id - a.id);
 }
 
