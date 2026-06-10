@@ -126,7 +126,10 @@ public class OrderServiceImpl implements OrderService {
         if (newStatus == OrderStatus.DEPOSIT_PAID || newStatus == OrderStatus.FULLY_PAID) {
             List<OrderItemEntity> orderItems = orderItemRepository.findByOrderEntity_OrderId(orderId);
             Instant expectedTime = Instant.now().plus(30, ChronoUnit.MINUTES);
-            String phoneLast4 = String.format("%04d", order.getUserId() % 10000);
+            String phone = order.getPhone();
+            String phoneLast4 = (phone != null && phone.length() >= 4)
+                    ? phone.substring(phone.length() - 4)
+                    : String.format("%04d", order.getUserId() % 10000);
             String method = phoneLast4 + "-" + String.format("%03d", orderId % 1000);
             for (OrderItemEntity item : orderItems) {
                 pickupClient.createPickup(new PickupCreateReq(item.getItemId(), expectedTime, method));
