@@ -137,7 +137,8 @@ public class DishService {
     @Cacheable("dishes-today")
     public List<DishResponse> getTodayForClient() {
         orderWindowService.assertOpen();
-        return dishRepository.findTodayAvailable().stream().map(DishService::toResponse).toList();
+        String dayOfWeek = LocalDate.now(orderWindowService.getZoneId()).getDayOfWeek().name();
+        return dishRepository.findTodayAvailable(dayOfWeek).stream().map(DishService::toResponse).toList();
     }
 
     private Dish findEntity(Long id) {
