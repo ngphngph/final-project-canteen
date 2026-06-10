@@ -15,4 +15,5 @@ public class OrderItemResp {
     private BigDecimal unitPrice;
     private PickupStatus pickupStatus;
     private String specialNote;
+    private String menuType;
 }

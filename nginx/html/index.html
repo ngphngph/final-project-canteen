@@ -778,8 +778,9 @@
       cart.forEach((item, idx) => {
         const unitPrice = linePrices[idx];
         const note = (item.specialRequestOptions || []).join(", ").slice(0, 200);
-        const key = `${item.id}__${note}__${unitPrice}`;
-        if (!grouped.has(key)) grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note });
+        const menuType = item.type === "drink" ? "DRINK" : "DISH";
+        const key = `${item.id}__${note}__${unitPrice}__${menuType}`;
+        if (!grouped.has(key)) grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note, menuType });
         grouped.get(key).quantity += 1;
       });
 
@@ -787,7 +788,7 @@
         const orderRes = await fetch(`${ORDER_BASE}/orders`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: session.userId, items: [...grouped.values()] })
+          body: JSON.stringify({ userId: session.userId, phone: session.phone, items: [...grouped.values()] })
         });
         if (!orderRes.ok) {
           const err = await orderRes.json().catch(() => ({}));
@@ -871,9 +872,10 @@
       items.forEach((item, idx) => {
         const unitPrice = linePrices[idx];
         const note = (item.specialRequestOptions || []).join(", ").slice(0, 200);
-        const key = `${item.id}__${note}__${unitPrice}`;
+        const menuType = item.type === "drink" ? "DRINK" : "DISH";
+        const key = `${item.id}__${note}__${unitPrice}__${menuType}`;
         if (!grouped.has(key)) {
-          grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note });
+          grouped.set(key, { menuId: item.id, quantity: 0, unitPrice, specialNote: note, menuType });
         }
         grouped.get(key).quantity += 1;
       });

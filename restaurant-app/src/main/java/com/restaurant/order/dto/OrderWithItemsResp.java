@@ -12,5 +12,6 @@ public record OrderWithItemsResp(
         BigDecimal depositAmt,
         String orderStatus,
         LocalDateTime createdAt,
+        String phone,
         List<OrderItemResp> items
 ) {}

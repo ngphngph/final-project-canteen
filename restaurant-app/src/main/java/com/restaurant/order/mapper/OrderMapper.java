@@ -17,7 +17,8 @@ public class OrderMapper {
                 entity.getTotalQty(),
                 entity.getDepositAmt(),
                 entity.getOrderStatus() != null ? entity.getOrderStatus().name() : null,
-                entity.getCreatedAt());
+                entity.getCreatedAt(),
+                entity.getPhone());
     }
 
     public OrderItemResp map(OrderItemEntity entity) {
@@ -29,6 +30,7 @@ public class OrderMapper {
                 .unitPrice(entity.getUnitPrice())
                 .pickupStatus(entity.getPickupStatus())
                 .specialNote(entity.getSpecialNote())
+                .menuType(entity.getMenuType())
                 .build();
     }
 }

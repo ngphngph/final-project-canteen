@@ -10,5 +10,6 @@ public record OrderResp(
         Integer totalQty,
         BigDecimal depositAmt,
         String orderStatus,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String phone
 ) {}

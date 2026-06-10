@@ -31,4 +31,7 @@ public class OrderItemEntity {
 
     @Column(length = 200)
     private String specialNote;
+
+    @Column(length = 10)
+    private String menuType;
 }

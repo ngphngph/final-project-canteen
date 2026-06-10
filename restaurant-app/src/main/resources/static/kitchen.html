@@ -180,7 +180,7 @@
     // ORDER_BASE, PICKUP_BASE, LOGIN_BASE already defined in canteen-store.js
 
     const state = loadCanteenState();
-    let menuCache = {}; // id → name, populated after API load
+    let menuCache = {}; // "DISH_id" / "DRINK_id" → name, populated after API load
 
     function dishStatusBadge(status) {
       if (status === "SOLD_OUT") return '<span class="present-badge-sold">售罄</span>';
@@ -282,7 +282,7 @@
               ? d.specialRequestOptions.split(",").map(s => s.trim()).filter(Boolean)
               : []
           }));
-          apiDishes.forEach(d => { menuCache[d.id] = d.name; });
+          apiDishes.forEach(d => { menuCache[`DISH_${d.id}`] = d.name; });
         }
         if (drinkRes.ok) {
           const apiDrinks = await drinkRes.json();
@@ -291,7 +291,7 @@
             price: Number(d.price) || 0, balance: d.balance ?? 0,
             status: d.status || "SOLD_OUT", imageUrl: d.imageUrl || ""
           }));
-          apiDrinks.forEach(d => { menuCache[d.id] = d.name; });
+          apiDrinks.forEach(d => { menuCache[`DRINK_${d.id}`] = d.name; });
         }
       } catch (e) {
         console.warn("菜單 API 載入失敗", e);
@@ -360,8 +360,14 @@
       return map[status] || `<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">${status}</span>`;
     }
 
-    function getMenuItemName(menuId) {
-      if (menuCache[menuId]) return menuCache[menuId];
+    function getMenuItemName(menuId, menuType) {
+      if (menuType) {
+        const key = `${menuType}_${menuId}`;
+        if (menuCache[key]) return menuCache[key];
+      }
+      // fallback: try both types (for old orders without menuType)
+      if (menuCache[`DISH_${menuId}`]) return menuCache[`DISH_${menuId}`];
+      if (menuCache[`DRINK_${menuId}`]) return menuCache[`DRINK_${menuId}`];
       const d = state.dishes.find(x => x.id === menuId);
       if (d) return d.name;
       const dr = (state.drinks || []).find(x => x.id === menuId);
@@ -401,7 +407,7 @@
       const revenue   = todayOrders.reduce((s, o) => s + Number(o.totalAmt || 0), 0);
       const dishCount = {};
       todayOrders.forEach(o => (o.items || []).forEach(i => {
-        const name = getMenuItemName(i.menuId);
+        const name = getMenuItemName(i.menuId, i.menuType);
         dishCount[name] = (dishCount[name] || 0) + (i.quantity || 1);
       }));
       const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
@@ -441,14 +447,14 @@
       return orders.map(o => {
         const status     = o.orderStatus;
         const active     = ["PENDING_PAY","DEPOSIT_PAID","FULLY_PAID"].includes(status);
-        const phoneLast4 = o.userId ? String(o.userId % 10000).padStart(4, "0") : "GUST";
+        const phoneLast4 = o.phone ? String(o.phone).slice(-4) : (o.userId ? String(o.userId % 10000).padStart(4, "0") : "GUST");
         const orderLast3 = String(o.orderId % 1000).padStart(3, "0");
         const pickupCode = `${phoneLast4}-${orderLast3}`;
         const itemCount  = (o.items || []).reduce((s, i) => s + (i.quantity || 1), 0);
         const isExpanded = expandedOrders.has(o.orderId);
         const detailRows = (o.items || []).map(i => `
           <tr class="border-t border-slate-700">
-            <td class="py-1.5 pr-3 text-slate-300">${getMenuItemName(i.menuId)}</td>
+            <td class="py-1.5 pr-3 text-slate-300">${getMenuItemName(i.menuId, i.menuType)}</td>
             <td class="py-1.5 text-center text-slate-400 w-10">x${i.quantity || 1}</td>
             <td class="py-1.5 text-right text-slate-400 w-16">$${Number(i.unitPrice || 0).toFixed(0)}</td>
             <td class="py-1.5 pl-3 text-slate-500 text-xs">${i.specialNote || ""}</td>
@@ -577,7 +583,7 @@
       if (parts.length !== 2) return null;
       const [phonePart, orderPart] = parts;
       return todayOrders.find(o => {
-        const oPhone = String(o.userId % 10000).padStart(4, "0");
+        const oPhone = o.phone ? String(o.phone).slice(-4) : String(o.userId % 10000).padStart(4, "0");
         const oOrder = String(o.orderId % 1000).padStart(3, "0");
         return oPhone === phonePart && oOrder === orderPart;
       }) || null;
@@ -599,7 +605,7 @@
       }
 
       const orderId   = order.orderId;
-      const itemSummary = (order.items || []).map(i => `${getMenuItemName(i.menuId)} x${i.quantity || 1}`).join("、") || "—";
+      const itemSummary = (order.items || []).map(i => `${getMenuItemName(i.menuId, i.menuType)} x${i.quantity || 1}`).join("、") || "—";
 
       const session = getSession();
       const adminId = session ? session.userId : 0;

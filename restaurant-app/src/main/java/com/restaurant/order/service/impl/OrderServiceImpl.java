@@ -75,6 +75,7 @@ public class OrderServiceImpl implements OrderService {
 
         OrderEntity order = OrderEntity.builder()
                 .userId(req.userId())
+                .phone(req.phone())
                 .orderStatus(OrderStatus.PENDING_PAY)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -92,6 +93,7 @@ public class OrderServiceImpl implements OrderService {
                     .menuId(itemReq.menuId())
                     .quantity(itemReq.quantity())
                     .unitPrice(itemReq.unitPrice())
+                    .menuType(itemReq.menuType())
                     .pickupStatus(PickupStatus.PENDING)
                     .specialNote(itemReq.specialNote())
                     .build());
@@ -159,6 +161,7 @@ public class OrderServiceImpl implements OrderService {
                         o.getDepositAmt(),
                         o.getOrderStatus() != null ? o.getOrderStatus().name() : null,
                         o.getCreatedAt(),
+                        o.getPhone(),
                         itemsByOrder.getOrDefault(o.getOrderId(), List.of())))
                 .collect(Collectors.toList());
     }

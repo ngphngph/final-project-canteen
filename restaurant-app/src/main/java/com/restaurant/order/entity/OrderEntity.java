@@ -30,4 +30,7 @@ public class OrderEntity {
     private OrderStatus orderStatus;
 
     private LocalDateTime createdAt;
+
+    @Column(length = 20)
+    private String phone;
 }
