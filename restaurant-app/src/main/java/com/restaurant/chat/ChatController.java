@@ -25,7 +25,7 @@ public class ChatController {
     private String geminiApiKey;
 
     private static final String GEMINI_URL =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=";
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=";
 
     private static final String SYSTEM_PROMPT =
         "你是 Canteen 校園餐廳的智能助理，透過網頁聊天介面協助用戶。\n" +
