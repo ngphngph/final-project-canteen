@@ -1450,33 +1450,40 @@
   }
 
   async function chatCallAI(text) {
-    const key = localStorage.getItem("canteen_openai_key");
-    if (!key) {
-      const k = prompt("請輸入 OpenAI API Key（僅存於本機）：");
+    let apiKey = localStorage.getItem("canteen_gemini_key");
+    if (!apiKey) {
+      const k = prompt("請輸入 Gemini API Key（aistudio.google.com 免費取得，僅存於本機）：");
       if (!k) return;
-      localStorage.setItem("canteen_openai_key", k.trim());
+      apiKey = k.trim();
+      localStorage.setItem("canteen_gemini_key", apiKey);
     }
-    const apiKey = localStorage.getItem("canteen_openai_key");
-    chatHist.push({ role: "user", content: text });
+    chatHist.push({ role: "user", parts: [{ text }] });
     chatShowTyping();
     try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: "gpt-4o-mini", max_tokens: 400,
-          messages: [{ role: "system", content: CHAT_SYSTEM }, ...chatHist],
-        }),
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: CHAT_SYSTEM }] },
+            contents: chatHist,
+            generationConfig: { maxOutputTokens: 400 },
+          }),
+        }
+      );
       const data = res.ok ? await res.json() : null;
       chatRemoveTyping();
-      if (data?.error?.code === "invalid_api_key") {
-        localStorage.removeItem("canteen_openai_key");
-        chatAppend("bot", "API Key 無效，請重新設定。"); return;
+      if (!res.ok) {
+        if (res.status === 400 || res.status === 403) {
+          localStorage.removeItem("canteen_gemini_key");
+          chatAppend("bot", "API Key 無效，請重新設定。"); return;
+        }
+        chatAppend("bot", "服務暫時無法回應，請稍後再試。"); return;
       }
-      const reply = data?.choices?.[0]?.message?.content ?? "服務暫時無法回應，請稍後再試。";
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "服務暫時無法回應，請稍後再試。";
       chatAppend("bot", reply);
-      chatHist.push({ role: "assistant", content: reply });
+      chatHist.push({ role: "model", parts: [{ text: reply }] });
     } catch (_) {
       chatRemoveTyping();
       chatAppend("bot", "連線出現問題，請稍後再試。");
