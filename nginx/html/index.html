@@ -99,13 +99,7 @@
         </div>
 
 <div class="border-t border-slate-200 mt-4 pt-4">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
-            <h3 class="font-semibold text-lg">我的訂單</h3>
-            <a href="https://m.me/1206541779201305" target="_blank"
-              style="font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:0.5rem;background:#2563eb;color:#fff;text-decoration:none;white-space:nowrap">
-              查閱訂單狀況
-            </a>
-          </div>
+          <h3 class="font-semibold text-lg mb-2">我的訂單</h3>
           <div id="orderStatusBanner" class="hidden mb-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-800"></div>
           <div id="myOrdersList" class="space-y-2 max-h-52 overflow-auto pr-1"></div>
           <button id="viewAllOrdersBtn" type="button"
@@ -408,7 +402,7 @@
             const _s = getSession();
             const ph = o.userId ? String(o.userId % 10000).padStart(4,"0") : "????";
             const ord = String((o.backendOrderId || o.id) % 1000).padStart(3,"0");
-            return `<p class="mt-1 text-slate-500">取餐碼：<span class="font-mono font-semibold text-slate-700">${ph}-${ord}</span></p>`;
+            return `<p class="mt-1 text-slate-500">取餐碼：<span class="font-mono font-semibold text-slate-700">${ph}-${ord}</span> <a href="https://m.me/1206541779201305" target="_blank" style="font-size:0.7rem;padding:0.15rem 0.45rem;border-radius:0.4rem;background:#2563eb;color:#fff;text-decoration:none;vertical-align:middle">💬 查閱狀況</a></p>`;
           })() : ""}
           ${
             o.status === "PICKED_UP"
