@@ -14,11 +14,13 @@ import java.util.List;
 /**
  * Gemini 原生 API 客戶端。
  *
- * 端點：POST /v1beta/models/gemini-1.5-flash:generateContent?key={key}
- * 認證：?key= query string（原生門牌專用）
- * 格式：{ "system_instruction": {...}, "contents": [...] }
+ * 端點：POST /v1/models/gemini-1.5-flash:generateContent?key={key}
+ * 認證：?key= query string
  *
- * 503 退避策略：等 1s → 等 2s → 拋出 GeminiUnavailableException
+ * 重試策略：
+ *   503 → 等 1s 重試 → 等 2s 重試 → 拋出 GeminiUnavailableException
+ *   非 200（含 system_instruction 格式錯誤）→ 自動降級：移除 system_instruction，
+ *     改將 system prompt 置入第一條 user message 重試一次
  */
 public class GeminiChatClient {
 
@@ -37,52 +39,103 @@ public class GeminiChatClient {
 
     public String chat(String systemPrompt, List<Message> messages) throws Exception {
 
-        HttpResponse<String> res = callNative(systemPrompt, messages);
+        // ── 503 退避重試（最多 3 次）──────────────────────────
+        HttpResponse<String> res = callWithSystemInstruction(systemPrompt, messages);
 
         if (res.statusCode() == 503) {
             Thread.sleep(1_000);
-            res = callNative(systemPrompt, messages);
+            res = callWithSystemInstruction(systemPrompt, messages);
         }
         if (res.statusCode() == 503) {
             Thread.sleep(2_000);
-            res = callNative(systemPrompt, messages);
+            res = callWithSystemInstruction(systemPrompt, messages);
         }
         if (res.statusCode() == 503) {
             throw new GeminiUnavailableException("Gemini 服務目前壅塞，請稍後再試。");
         }
 
+        // ── 若非 200，移除 system_instruction 降級重試 ────────
+        // 原因：部分帳號或版本對 system_instruction 欄位格式不相容
+        if (res.statusCode() != 200) {
+            System.out.println("[GeminiClient] 降級：移除 system_instruction，改用純 contents 重試");
+            res = callContentsOnly(systemPrompt, messages);
+        }
+
         return parseReply(res);
     }
 
-    private HttpResponse<String> callNative(String systemPrompt,
-                                            List<Message> messages) throws Exception {
+    // ── 完整請求：含 system_instruction ──────────────────────
+
+    private HttpResponse<String> callWithSystemInstruction(String systemPrompt,
+                                                           List<Message> messages) throws Exception {
         ObjectNode body = mapper.createObjectNode();
 
-        // 系統提示
+        // system_instruction 必須在 JSON 第一層，且包含 parts 陣列
         ObjectNode sysInstruction = mapper.createObjectNode();
         ArrayNode sysParts = mapper.createArrayNode();
         sysParts.add(mapper.createObjectNode().put("text", systemPrompt));
         sysInstruction.set("parts", sysParts);
         body.set("system_instruction", sysInstruction);
 
-        // 對話內容（role 只接受 "user" / "model"）
+        body.set("contents", buildContents(messages));
+        body.set("generationConfig", buildGenConfig());
+
+        return send(body);
+    }
+
+    // ── 降級請求：無 system_instruction，system prompt 併入第一條 user message ──
+
+    private HttpResponse<String> callContentsOnly(String systemPrompt,
+                                                  List<Message> messages) throws Exception {
+        ObjectNode body = mapper.createObjectNode();
+
+        ArrayNode contents = mapper.createArrayNode();
+
+        // 將 system prompt 作為第一條 user message 前綴，確保模型仍能接收指令
+        if (!messages.isEmpty()) {
+            Message first = messages.get(0);
+            String combined = "[系統指令] " + systemPrompt + "\n\n" + first.text();
+            contents.add(buildContent("user", combined));
+            for (int i = 1; i < messages.size(); i++) {
+                contents.add(buildContent(messages.get(i).role(), messages.get(i).text()));
+            }
+        }
+
+        body.set("contents", contents);
+        body.set("generationConfig", buildGenConfig());
+
+        return send(body);
+    }
+
+    // ── 共用工具方法 ──────────────────────────────────────────
+
+    private ArrayNode buildContents(List<Message> messages) {
         ArrayNode contents = mapper.createArrayNode();
         for (Message m : messages) {
-            ObjectNode content = mapper.createObjectNode();
-            content.put("role", "assistant".equals(m.role()) ? "model" : m.role());
-            ArrayNode parts = mapper.createArrayNode();
-            parts.add(mapper.createObjectNode().put("text", m.text()));
-            content.set("parts", parts);
-            contents.add(content);
+            contents.add(buildContent(m.role(), m.text()));
         }
-        body.set("contents", contents);
+        return contents;
+    }
 
+    private ObjectNode buildContent(String role, String text) {
+        ObjectNode content = mapper.createObjectNode();
+        // Google 原生 API：role 只接受 "user" / "model"
+        content.put("role", "assistant".equals(role) ? "model" : role);
+        ArrayNode parts = mapper.createArrayNode();
+        parts.add(mapper.createObjectNode().put("text", text));
+        content.set("parts", parts);
+        return content;
+    }
+
+    private ObjectNode buildGenConfig() {
         ObjectNode genConfig = mapper.createObjectNode();
         genConfig.put("maxOutputTokens", 400);
-        body.set("generationConfig", genConfig);
+        return genConfig;
+    }
 
+    private HttpResponse<String> send(ObjectNode body) throws Exception {
         String url = ENDPOINT + "?key=" + apiKey;
-        System.out.println("Calling URL: " + url.replace(apiKey, "REDACTED")); // 確認路徑，隱藏 key
+        System.out.println("Calling URL: " + url.replace(apiKey, "REDACTED"));
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(url))
