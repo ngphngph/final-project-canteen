@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -37,6 +36,32 @@ public class DailyStockResetScheduler {
         @CacheEvict(value = "dish-by-id",   allEntries = true),
         @CacheEvict(value = "drink-by-id",  allEntries = true)
     })
+    public void resetDailyStock() {
+        LocalDate today = LocalDate.now();
+
+        List<Menu> menus = menuRepository.findByMenuDate(today);
+        for (Menu menu : menus) {
+            menu.setBalance(menu.getInitialStock());
+            menu.setStatus(StockStatusUtil.syncStatus(menu.getBalance()));
+        }
+
+        List<Dish> dishes = dishRepository.findByMenuDate(today);
+        for (Dish dish : dishes) {
+            dish.setBalance(dish.getInitialStock());
+            dish.setStatus(StockStatusUtil.syncStatus(dish.getBalance()));
+        }
+
+        String chineseDay = toChinese(today.getDayOfWeek());
+        List<Dish> weeklyDishes = dishRepository.findByCategory(chineseDay);
+        for (Dish dish : weeklyDishes) {
+            dish.setBalance(dish.getInitialStock());
+            dish.setStatus(StockStatusUtil.syncStatus(dish.getBalance()));
+        }
+
+        log.info("Daily stock reset completed for {} ({}), weekly dishes: {}",
+                today, chineseDay, weeklyDishes.size());
+    }
+
     private static String toChinese(DayOfWeek dow) {
         return switch (dow) {
             case MONDAY    -> "週一";
@@ -47,30 +72,5 @@ public class DailyStockResetScheduler {
             case SATURDAY  -> "週六";
             default        -> "";
         };
-    }
-
-    public void resetDailyStock() {
-        LocalDate today = LocalDate.now();
-        List<Menu> menus = menuRepository.findByMenuDate(today);
-        for (Menu menu : menus) {
-            menu.setBalance(menu.getInitialStock());
-            menu.setStatus(StockStatusUtil.syncStatus(menu.getBalance()));
-        }
-        List<Dish> dishes = dishRepository.findByMenuDate(today);
-        for (Dish dish : dishes) {
-            dish.setBalance(dish.getInitialStock());
-            dish.setStatus(StockStatusUtil.syncStatus(dish.getBalance()));
-        }
-
-        // 按星期分類的菜式（category = 週一~週六）每天也要重置
-        String chineseDay = toChinese(today.getDayOfWeek());
-        List<Dish> weeklyDishes = dishRepository.findByCategory(chineseDay);
-        for (Dish dish : weeklyDishes) {
-            dish.setBalance(dish.getInitialStock());
-            dish.setStatus(StockStatusUtil.syncStatus(dish.getBalance()));
-        }
-
-        log.info("Daily stock reset completed for {} ({}), weekly dishes: {}",
-                today, chineseDay, weeklyDishes.size());
     }
 }
