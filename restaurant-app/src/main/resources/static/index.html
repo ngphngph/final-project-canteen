@@ -1450,40 +1450,19 @@
   }
 
   async function chatCallAI(text) {
-    let apiKey = localStorage.getItem("canteen_gemini_key");
-    if (!apiKey) {
-      const k = prompt("請輸入 Gemini API Key（aistudio.google.com 免費取得，僅存於本機）：");
-      if (!k) return;
-      apiKey = k.trim();
-      localStorage.setItem("canteen_gemini_key", apiKey);
-    }
-    chatHist.push({ role: "user", parts: [{ text }] });
+    chatHist.push({ role: "user", text });
     chatShowTyping();
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: CHAT_SYSTEM }] },
-            contents: chatHist,
-            generationConfig: { maxOutputTokens: 400 },
-          }),
-        }
-      );
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: chatHist }),
+      });
       const data = res.ok ? await res.json() : null;
       chatRemoveTyping();
-      if (!res.ok) {
-        if (res.status === 400 || res.status === 403) {
-          localStorage.removeItem("canteen_gemini_key");
-          chatAppend("bot", "API Key 無效，請重新設定。"); return;
-        }
-        chatAppend("bot", "服務暫時無法回應，請稍後再試。"); return;
-      }
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "服務暫時無法回應，請稍後再試。";
+      const reply = data?.reply || "服務暫時無法回應，請稍後再試。";
       chatAppend("bot", reply);
-      chatHist.push({ role: "model", parts: [{ text: reply }] });
+      chatHist.push({ role: "model", text: reply });
     } catch (_) {
       chatRemoveTyping();
       chatAppend("bot", "連線出現問題，請稍後再試。");
