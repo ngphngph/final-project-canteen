@@ -87,8 +87,9 @@ public class GeminiChatClient {
                 """.formatted(model, buildMessagesJson(systemPrompt, messages));
 
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/chat/completions?key=" + apiKey))
+                .uri(URI.create(baseUrl + "/chat/completions"))
                 .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
