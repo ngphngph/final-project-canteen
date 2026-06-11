@@ -5,6 +5,7 @@ import com.restaurant.menu.entity.Menu;
 import com.restaurant.menu.repository.DishRepository;
 import com.restaurant.menu.repository.MenuRepository;
 import com.restaurant.menu.util.StockStatusUtil;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -24,6 +25,19 @@ public class DailyStockResetScheduler {
 
     private final MenuRepository menuRepository;
     private final DishRepository dishRepository;
+
+    @PostConstruct
+    @Transactional
+    public void resetTodayWeeklyDishesOnStartup() {
+        String chineseDay = toChinese(LocalDate.now(java.time.ZoneId.of("Asia/Hong_Kong")).getDayOfWeek());
+        if (chineseDay.isEmpty()) return;
+        List<Dish> weeklyDishes = dishRepository.findByCategory(chineseDay);
+        for (Dish dish : weeklyDishes) {
+            dish.setBalance(dish.getInitialStock());
+            dish.setStatus(StockStatusUtil.syncStatus(dish.getBalance()));
+        }
+        log.info("Startup stock reset for {} weekly dishes ({})", weeklyDishes.size(), chineseDay);
+    }
 
     @Scheduled(cron = "${canteen.scheduler.daily-reset-cron:0 0 0 * * *}",
                zone = "${canteen.order.zone:Asia/Hong_Kong}")
