@@ -92,7 +92,7 @@ public class MealPickupService {
                 .map(MealPickup::getExpectedTime)
                 .filter(t -> t != null)
                 .findFirst()
-                .map(t -> DateTimeFormatter.ofPattern("HH:mm")
+                .map(t -> DateTimeFormatter.ofPattern("M月d日 HH:mm")
                         .withZone(ZoneId.of("Asia/Hong_Kong")).format(t))
                 .orElse(null);
         return new PickupStatusResp(code, status, expectedTime);
