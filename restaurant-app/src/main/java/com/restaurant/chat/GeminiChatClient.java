@@ -25,7 +25,7 @@ import java.util.List;
 public class GeminiChatClient {
 
     private static final String ENDPOINT =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent";
 
     private final String apiKey;
     private final HttpClient http;
@@ -129,7 +129,7 @@ public class GeminiChatClient {
 
     private ObjectNode buildGenConfig() {
         ObjectNode genConfig = mapper.createObjectNode();
-        genConfig.put("maxOutputTokens", 400);
+        genConfig.put("maxOutputTokens", 800);
         return genConfig;
     }
 

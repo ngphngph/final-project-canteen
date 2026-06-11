@@ -1423,20 +1423,21 @@
     // 立刻鎖定輸入區，防止連點重複送出
     input.disabled = btn.disabled = true;
     input.value = "";
-
     chatAppend("user", text);
-    const match = text.match(PICKUP_RE2);
-    chatAwaitCode = false;
 
-    if (match) {
-      await chatQueryPickup(`${match[1]}-${match[2]}`);
-    } else {
-      await chatCallAI(text);
+    try {
+      const match = text.match(PICKUP_RE2);
+      chatAwaitCode = false;
+      if (match) {
+        await chatQueryPickup(`${match[1]}-${match[2]}`);
+      } else {
+        await chatCallAI(text);
+      }
+    } finally {
+      // 無論成功、報錯、或 timeout，都確保解鎖
+      input.disabled = btn.disabled = false;
+      input.focus();
     }
-
-    // 無論成功或失敗，always 解鎖輸入區
-    input.disabled = btn.disabled = false;
-    input.focus();
   }
 
   // ── 取餐碼查詢 ───────────────────────────────────────────
@@ -1461,9 +1462,11 @@
 
   // ── AI 對話核心 ──────────────────────────────────────────
   async function chatCallAI(text) {
-    // 打包 Payload：固定只有 1 條用戶訊息，絕不帶任何歷史對話。
-    // 後端 ChatController 會自動加入 system prompt，無需前端傳遞。
     const payload = { messages: [{ role: "user", text }] };
+
+    // 30 秒 timeout：Gemini 塞車時不讓 UI 永久死鎖
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30_000);
 
     chatShowTyping();
     try {
@@ -1471,16 +1474,15 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       chatRemoveTyping();
 
-      // 精準攔截各 HTTP 狀態碼
       if (!res.ok) {
         if (res.status === 429) {
-          // 429 = 配額耗盡 / 呼叫過頻（Gemini Resource Exhausted）
           chatAppend("bot", "⚠️ 系統呼叫太頻繁，請等待 30 秒後再試。");
         } else if (res.status === 503 || res.status === 500) {
-          // 503/500 = 伺服器過載或暫時不可用
           chatAppend("bot", "⚙️ 伺服器目前忙碌中，請稍候再試。");
         } else {
           chatAppend("bot", `❌ 請求失敗（HTTP ${res.status}），請稍後再試。`);
@@ -1488,16 +1490,17 @@
         return;
       }
 
-      // 正常 200：解析回應，取出 AI 回覆文字
-      // 用 .catch(() => null) 防止 body 非 JSON 時二次拋錯
       const data  = await res.json().catch(() => null);
       const reply = data?.reply ?? "服務暫時無法回應，請稍後再試。";
       chatAppend("bot", reply);
 
-    } catch (_) {
-      // 兜底 catch：網路中斷、CORS 拒絕、DNS 失敗等所有 Runtime 例外
+    } catch (err) {
+      clearTimeout(timer);
       chatRemoveTyping();
-      chatAppend("bot", "❌ 連線異常，請檢查網路連線。");
+      // AbortError = 30 秒 timeout 觸發
+      chatAppend("bot", err.name === "AbortError"
+        ? "⏱️ 回應逾時，AI 目前忙碌，請稍後再試。"
+        : "❌ 連線異常，請檢查網路連線。");
     }
   }
 
