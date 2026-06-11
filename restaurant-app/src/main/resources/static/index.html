@@ -1458,8 +1458,9 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: chatHist }),
       });
-      const data = res.ok ? await res.json() : null;
       chatRemoveTyping();
+      if (!res.ok) { chatAppend("bot", `錯誤 ${res.status}，請確認服務設定。`); return; }
+      const data = await res.json();
       const reply = data?.reply || "服務暫時無法回應，請稍後再試。";
       chatAppend("bot", reply);
       chatHist.push({ role: "model", text: reply });
