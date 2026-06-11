@@ -1295,5 +1295,212 @@
       }
     });
   </script>
+<!-- ── Floating Chat Widget ─────────────────────────────── -->
+<style>
+  #chatBubble { position:fixed; bottom:1.25rem; right:1.25rem; z-index:1000; }
+  #chatToggle {
+    width:52px; height:52px; border-radius:50%; background:#2563eb; color:#fff;
+    border:none; font-size:1.4rem; cursor:pointer; box-shadow:0 4px 14px rgba(37,99,235,0.4);
+    display:flex; align-items:center; justify-content:center; transition:transform 0.2s;
+  }
+  #chatToggle:hover { transform:scale(1.08); }
+  #chatPanel {
+    display:none; flex-direction:column;
+    width:320px; height:460px; background:#fff;
+    border-radius:1.25rem; box-shadow:0 8px 30px rgba(0,0,0,0.15);
+    overflow:hidden; margin-bottom:0.75rem;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  #chatPanel.open { display:flex; }
+  .chat-header {
+    display:flex; align-items:center; gap:0.6rem;
+    padding:0.75rem 1rem; border-bottom:1px solid #f1f5f9; flex-shrink:0;
+  }
+  .chat-avatar { width:32px; height:32px; border-radius:10px; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+  #chatMessages {
+    flex:1; overflow-y:auto; padding:0.75rem; display:flex; flex-direction:column; gap:0.5rem;
+  }
+  .cb-user {
+    background:#2563eb; color:#fff; border-radius:1rem 1rem 0.2rem 1rem;
+    padding:0.45rem 0.75rem; max-width:78%; align-self:flex-end;
+    font-size:0.8rem; line-height:1.5; word-break:break-word;
+  }
+  .cb-bot {
+    background:#f1f5f9; color:#1e293b; border-radius:1rem 1rem 1rem 0.2rem;
+    padding:0.45rem 0.75rem; max-width:85%; align-self:flex-start;
+    font-size:0.8rem; line-height:1.55; white-space:pre-wrap; word-break:break-word;
+  }
+  .cb-bot strong { font-weight:600; }
+  .chat-cmds { display:flex; gap:0.4rem; padding:0.4rem 0.75rem; overflow-x:auto; border-top:1px solid #f1f5f9; flex-shrink:0; }
+  .chat-cmd {
+    border:1px solid #cbd5e1; border-radius:999px; padding:0.2rem 0.65rem;
+    font-size:0.72rem; color:#475569; background:#fff; cursor:pointer; white-space:nowrap;
+  }
+  .chat-cmd:hover { background:#eff6ff; border-color:#2563eb; color:#2563eb; }
+  .chat-input-row { display:flex; gap:0.4rem; padding:0.6rem 0.75rem; border-top:1px solid #f1f5f9; flex-shrink:0; }
+  #chatInput {
+    flex:1; border:1px solid #e2e8f0; border-radius:0.75rem; padding:0.4rem 0.65rem;
+    font-size:0.8rem; outline:none;
+  }
+  #chatInput:focus { border-color:#2563eb; }
+  #chatSend {
+    padding:0.4rem 0.75rem; background:#2563eb; color:#fff; border:none;
+    border-radius:0.75rem; font-size:0.8rem; cursor:pointer;
+  }
+  .cb-typing span {
+    display:inline-block; width:5px; height:5px; border-radius:50%;
+    background:#94a3b8; margin:0 1px; animation:cbBlink 1.2s infinite;
+  }
+  .cb-typing span:nth-child(2){animation-delay:.2s} .cb-typing span:nth-child(3){animation-delay:.4s}
+  @keyframes cbBlink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+</style>
+
+<div id="chatBubble">
+  <div id="chatPanel">
+    <div class="chat-header">
+      <div class="chat-avatar">🍴</div>
+      <div>
+        <p style="font-weight:600;font-size:0.82rem;color:#1e293b">Canteen 智能助理</p>
+        <p style="font-size:0.7rem;color:#22c55e">● 線上服務中</p>
+      </div>
+      <button onclick="toggleChat()" style="margin-left:auto;background:none;border:none;color:#94a3b8;font-size:1.1rem;cursor:pointer">✕</button>
+    </div>
+    <div id="chatMessages"></div>
+    <div class="chat-cmds">
+      <button class="chat-cmd" onclick="chatCmd('order')">📋 訂單狀況</button>
+      <button class="chat-cmd" onclick="chatCmd('contact')">📞 聯絡</button>
+      <button class="chat-cmd" onclick="chatCmd('help')">❓ 幫助</button>
+    </div>
+    <div class="chat-input-row">
+      <input id="chatInput" type="text" placeholder="輸入訊息或取餐碼…"
+        onkeydown="if(event.key==='Enter')chatSend()" />
+      <button id="chatSend" onclick="chatSend()">發送</button>
+    </div>
+  </div>
+  <button id="chatToggle" onclick="toggleChat()" title="智能助理">💬</button>
+</div>
+
+<script>
+  const CHAT_SYSTEM = `你是 Canteen 校園餐廳的智能助理，透過網頁聊天介面協助用戶。
+語氣溫和真誠，回答簡短精煉，用繁體中文回覆（除非用戶用其他語言）。
+多用換行與列點，重要字詞加**粗體**，切勿編造資訊。`;
+
+  const PICKUP_RE2 = /\b([0-9]{4})-([0-9]{3})\b/;
+  const chatHist = [];
+  let chatOpen = false;
+  let chatAwaitCode = false;
+  let chatInited = false;
+
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    document.getElementById("chatPanel").classList.toggle("open", chatOpen);
+    document.getElementById("chatToggle").textContent = chatOpen ? "✕" : "💬";
+    if (chatOpen && !chatInited) {
+      chatInited = true;
+      chatAppend("bot", "你好！有什麼可以幫到你？\n可直接輸入**取餐碼**（如 0289-018）查詢狀態。");
+    }
+  }
+
+  function chatCmd(type) {
+    if (type === "order") {
+      chatAppend("user", "📋 訂單狀況");
+      chatAppend("bot", "請輸入你的**取餐碼**（格式：XXXX-XXX，例如 0289-018）。");
+      chatAwaitCode = true;
+    } else if (type === "contact") {
+      chatAppend("user", "📞 聯絡");
+      chatAppend("bot", "如需人工協助，請聯絡餐廳櫃檯或向廚房工作人員查詢。\n\n營業時間內歡迎直接前往詢問。");
+    } else if (type === "help") {
+      chatAppend("user", "❓ 幫助");
+      chatAppend("bot", "你可以：\n- 輸入**取餐碼**查詢餐點狀況\n- 點擊📋 訂單狀況查詢進度\n- 點擊📞 聯絡取得聯絡資訊\n- 直接輸入問題，AI 為你解答");
+    }
+  }
+
+  async function chatSend() {
+    const input = document.getElementById("chatInput");
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    chatAppend("user", text);
+    const match = text.match(PICKUP_RE2);
+    if (match || chatAwaitCode) {
+      chatAwaitCode = false;
+      await chatQueryPickup(match ? `${match[1]}-${match[2]}` : text.toUpperCase());
+      return;
+    }
+    await chatCallAI(text);
+  }
+
+  async function chatQueryPickup(code) {
+    chatShowTyping();
+    try {
+      const res = await fetch(`/api/pickups/status?code=${encodeURIComponent(code.toUpperCase())}`);
+      const data = res.ok ? await res.json() : null;
+      chatRemoveTyping();
+      if (!data || data.status === "NOT_FOUND") {
+        chatAppend("bot", `找不到取餐碼 **${code}**，請確認後再試。`);
+      } else if (data.status === "READY") {
+        chatAppend("bot", `✅ 取餐碼 **${data.code}** 餐點已完成！\n請前往取餐。${data.expectedTime ? "\n預計時間：" + data.expectedTime : ""}`);
+      } else {
+        chatAppend("bot", `👨‍🍳 取餐碼 **${data.code}** 製作中，請稍候。${data.expectedTime ? "\n預計時間：" + data.expectedTime : ""}`);
+      }
+    } catch (_) {
+      chatRemoveTyping();
+      chatAppend("bot", "無法查詢，請稍後再試。");
+    }
+  }
+
+  async function chatCallAI(text) {
+    const key = localStorage.getItem("canteen_openai_key");
+    if (!key) {
+      const k = prompt("請輸入 OpenAI API Key（僅存於本機）：");
+      if (!k) return;
+      localStorage.setItem("canteen_openai_key", k.trim());
+    }
+    const apiKey = localStorage.getItem("canteen_openai_key");
+    chatHist.push({ role: "user", content: text });
+    chatShowTyping();
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4o-mini", max_tokens: 400,
+          messages: [{ role: "system", content: CHAT_SYSTEM }, ...chatHist],
+        }),
+      });
+      const data = res.ok ? await res.json() : null;
+      chatRemoveTyping();
+      if (data?.error?.code === "invalid_api_key") {
+        localStorage.removeItem("canteen_openai_key");
+        chatAppend("bot", "API Key 無效，請重新設定。"); return;
+      }
+      const reply = data?.choices?.[0]?.message?.content ?? "服務暫時無法回應，請稍後再試。";
+      chatAppend("bot", reply);
+      chatHist.push({ role: "assistant", content: reply });
+    } catch (_) {
+      chatRemoveTyping();
+      chatAppend("bot", "連線出現問題，請稍後再試。");
+    }
+  }
+
+  function chatAppend(role, text) {
+    const el = document.createElement("div");
+    el.className = role === "user" ? "cb-user" : "cb-bot";
+    const safe = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    el.innerHTML = role === "bot" ? safe.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>") : safe;
+    document.getElementById("chatMessages").appendChild(el);
+    el.scrollIntoView({ behavior:"smooth", block:"end" });
+  }
+
+  function chatShowTyping() {
+    const el = document.createElement("div");
+    el.className = "cb-bot cb-typing"; el.id = "chatTyping";
+    el.innerHTML = "<span></span><span></span><span></span>";
+    document.getElementById("chatMessages").appendChild(el);
+    el.scrollIntoView({ behavior:"smooth", block:"end" });
+  }
+
+  function chatRemoveTyping() { document.getElementById("chatTyping")?.remove(); }
+</script>
 </body>
 </html>
