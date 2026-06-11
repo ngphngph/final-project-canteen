@@ -15,6 +15,8 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
     List<Dish> findByMenuDateAndStatus(LocalDate menuDate, Status status);
     Optional<Dish> findByMenuDateAndCode(LocalDate menuDate, String code);
 
+    List<Dish> findByCategory(String category);
+
     @Query("SELECT d FROM Dish d WHERE (d.category = :dayOfWeek OR d.published = true) AND d.balance > 0 AND d.status = 'ON_LIST'")
     List<Dish> findTodayAvailable(@Param("dayOfWeek") String dayOfWeek);
 }

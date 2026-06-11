@@ -13,8 +13,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -35,6 +37,18 @@ public class DailyStockResetScheduler {
         @CacheEvict(value = "dish-by-id",   allEntries = true),
         @CacheEvict(value = "drink-by-id",  allEntries = true)
     })
+    private static String toChinese(DayOfWeek dow) {
+        return switch (dow) {
+            case MONDAY    -> "週一";
+            case TUESDAY   -> "週二";
+            case WEDNESDAY -> "週三";
+            case THURSDAY  -> "週四";
+            case FRIDAY    -> "週五";
+            case SATURDAY  -> "週六";
+            default        -> "";
+        };
+    }
+
     public void resetDailyStock() {
         LocalDate today = LocalDate.now();
         List<Menu> menus = menuRepository.findByMenuDate(today);
@@ -47,6 +61,16 @@ public class DailyStockResetScheduler {
             dish.setBalance(dish.getInitialStock());
             dish.setStatus(StockStatusUtil.syncStatus(dish.getBalance()));
         }
-        log.info("Daily stock reset completed for {}", today);
+
+        // 按星期分類的菜式（category = 週一~週六）每天也要重置
+        String chineseDay = toChinese(today.getDayOfWeek());
+        List<Dish> weeklyDishes = dishRepository.findByCategory(chineseDay);
+        for (Dish dish : weeklyDishes) {
+            dish.setBalance(dish.getInitialStock());
+            dish.setStatus(StockStatusUtil.syncStatus(dish.getBalance()));
+        }
+
+        log.info("Daily stock reset completed for {} ({}), weekly dishes: {}",
+                today, chineseDay, weeklyDishes.size());
     }
 }
