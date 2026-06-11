@@ -704,7 +704,41 @@
   </div>
 
   <!-- ============== 九、結語 ============== -->
-  <h2>九、結語：務實大於理想</h2>
+  <h2>九、AI 智能客服聊天機器人</h2>
+
+  <p>v2 新增一個嵌入式 AI 聊天助理，讓顧客無需登入任何第三方平台即可查詢取餐狀況或諮詢問題。</p>
+
+  <h3>架構設計</h3>
+  <div class="info">
+    <strong>顧客瀏覽器</strong>（index.html 右下角 💬 浮動按鈕）<br>
+    &nbsp;&nbsp;↓ POST /api/chat { messages: [...] }<br>
+    <strong>Spring Boot — ChatController</strong>（com.restaurant.chat）<br>
+    &nbsp;&nbsp;↓ HTTPS + API Key（環境變數 GEMINI_API_KEY）<br>
+    <strong>Google Gemini API</strong>（gemini-flash-latest）<br>
+    &nbsp;&nbsp;↓ 回傳 { reply: "..." }<br>
+    <strong>顧客瀏覽器</strong> 顯示回覆
+  </div>
+
+  <h3>取餐碼查詢（本地處理，不經 AI）</h3>
+  <p>當訊息符合取餐碼格式（如 <code>0289-018</code>），前端直接呼叫 <code>GET /api/pickups/status?code=XXXX</code>，即時顯示狀態，<strong>無需呼叫 AI API</strong>，節省 token 用量。</p>
+
+  <h3>快捷指令（前端本地處理）</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0">
+    <thead><tr style="background:#E8F4FD"><th style="padding:8px;text-align:left;border:1px solid #ddd">指令</th><th style="padding:8px;text-align:left;border:1px solid #ddd">處理方式</th><th style="padding:8px;text-align:left;border:1px solid #ddd">說明</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:8px;border:1px solid #ddd">📋 訂單狀況</td><td style="padding:8px;border:1px solid #ddd">本地</td><td style="padding:8px;border:1px solid #ddd">引導輸入取餐碼</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd">📞 聯絡</td><td style="padding:8px;border:1px solid #ddd">本地</td><td style="padding:8px;border:1px solid #ddd">顯示聯絡資訊</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd">❓ 幫助</td><td style="padding:8px;border:1px solid #ddd">本地</td><td style="padding:8px;border:1px solid #ddd">顯示使用說明</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd">一般問題</td><td style="padding:8px;border:1px solid #ddd">Gemini AI</td><td style="padding:8px;border:1px solid #ddd">呼叫 /api/chat 由 AI 回覆</td></tr>
+    </tbody>
+  </table>
+
+  <h3>安全設計</h3>
+  <div class="good">
+    <strong>API Key 不暴露於前端</strong> — GEMINI_API_KEY 存放於 Zeabur 環境變數，Spring Boot 在伺服器端呼叫 Gemini API，瀏覽器只與自己的後端通訊（<code>/api/chat</code>），永不直接接觸 Google API。
+  </div>
+
+  <h2>十、結語：務實大於理想</h2>
 
   <div class="good">
     <strong>v2 的核心信念：</strong>
@@ -717,7 +751,7 @@
   <p>這份架構說明 v2 並非「降級」，而是「合身」。v1 的願景仍在；v2 是它的<strong>第一個可上線版本</strong>。</p>
 
   <div class="footer">
-    校園餐廳 POS 系統 · 系統架構說明 v2 · 依 CLAUDE.md 實際實作 · 2026-06-08
+    校園餐廳 POS 系統 · 系統架構說明 v2 · 依 CLAUDE.md 實際實作 · 2026-06-11
   </div>
 
 </div>
