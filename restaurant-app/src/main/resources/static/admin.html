@@ -69,6 +69,10 @@
         <a href="#section-orders" class="block px-3 py-2 rounded-lg">訂單管理</a>
         <a href="#section-order-window" class="block px-3 py-2 rounded-lg">訂購時段設定</a>
         <a href="#section-recharge" class="block px-3 py-2 rounded-lg">用戶充值管理</a>
+        <a href="#section-feedback" class="block px-3 py-2 rounded-lg flex items-center justify-between">
+          用戶回饋管理
+          <span id="feedbackBadge" class="hidden text-xs bg-red-500 text-white rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center"></span>
+        </a>
       </nav>
     </aside>
 
@@ -281,6 +285,20 @@
         </div>
       </section>
 
+      <!-- 用戶回饋管理 -->
+      <section id="section-feedback" class="present-card p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="font-semibold text-lg text-slate-800">用戶回饋管理</h2>
+            <p class="text-sm text-slate-500">來自聊天介面「📝 提交意見」的用戶留言</p>
+          </div>
+          <button type="button" onclick="loadFeedbacks()"
+            class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">重新整理</button>
+        </div>
+        <div id="feedbackList" class="space-y-2 text-sm">
+          <p class="text-slate-400 text-center py-4">載入中…</p>
+        </div>
+      </section>
 
     </main>
       <footer class="px-5 py-3 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
@@ -551,10 +569,61 @@
         document.getElementById("adminLoginOverlay").classList.add("hidden");
         document.getElementById("adminMainContent").classList.remove("hidden");
         loadMenuFromApi();
+        loadFeedbacks();
       } catch (_) {
         errEl.textContent = "無法連線至伺服器，請稍後再試";
         errEl.classList.remove("hidden");
       }
+    }
+
+    async function loadFeedbacks() {
+      const list = document.getElementById("feedbackList");
+      const badge = document.getElementById("feedbackBadge");
+      try {
+        const res = await fetch("/api/feedback", {
+          headers: { "Authorization": "Basic " + btoa(adminUser + ":" + adminPass) }
+        });
+        if (!res.ok) { list.innerHTML = '<p class="text-red-500 text-center py-4">載入失敗</p>'; return; }
+        const data = await res.json();
+
+        // 更新側邊欄未讀徽章
+        const unread = data.filter(f => !f.read).length;
+        if (unread > 0) {
+          badge.textContent = unread;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+
+        if (!data.length) {
+          list.innerHTML = '<p class="text-slate-400 text-center py-4">暫無回饋</p>';
+          return;
+        }
+
+        list.innerHTML = data.map(f => `
+          <div class="flex gap-3 items-start border rounded-lg p-3 ${f.read ? 'bg-white' : 'bg-blue-50 border-blue-200'}">
+            <div class="flex-1 min-w-0">
+              <p class="text-slate-800 break-words">${f.content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>
+              <p class="text-xs text-slate-400 mt-1">
+                ${f.createdAt ? f.createdAt.replace("T"," ").slice(0,16) : ""}
+                ${f.phone ? " · " + f.phone : ""}
+                ${f.read ? ' · <span class="text-green-600">已讀</span>' : ' · <span class="text-blue-600 font-medium">未讀</span>'}
+              </p>
+            </div>
+            ${!f.read ? `<button onclick="markFeedbackRead(${f.id})"
+              class="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">標為已讀</button>` : ""}
+          </div>`).join("");
+      } catch (_) {
+        list.innerHTML = '<p class="text-red-500 text-center py-4">連線失敗</p>';
+      }
+    }
+
+    async function markFeedbackRead(id) {
+      await fetch(`/api/feedback/${id}/read`, {
+        method: "PUT",
+        headers: { "Authorization": "Basic " + btoa(adminUser + ":" + adminPass) }
+      });
+      loadFeedbacks();
     }
 
     function adminLogout() {

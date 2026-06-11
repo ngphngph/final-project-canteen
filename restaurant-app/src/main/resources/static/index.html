@@ -1371,6 +1371,7 @@
       <button class="chat-cmd" onclick="chatCmd('order')">📋 訂單狀況</button>
       <button class="chat-cmd" onclick="chatCmd('contact')">📞 聯絡</button>
       <button class="chat-cmd" onclick="chatCmd('help')">❓ 幫助</button>
+      <button class="chat-cmd" onclick="chatCmd('feedback')">📝 提交意見</button>
     </div>
     <div class="chat-input-row">
       <input id="chatInput" type="text" placeholder="輸入訊息或取餐碼…"
@@ -1407,8 +1408,62 @@
       chatAppend("bot", "如需人工協助，請聯絡餐廳櫃檯或向廚房工作人員查詢。\n\n營業時間內歡迎直接前往詢問。");
     } else if (type === "help") {
       chatAppend("user", "❓ 幫助");
-      chatAppend("bot", "你可以：\n- 輸入**取餐碼**查詢餐點狀況\n- 點擊📋 訂單狀況查詢進度\n- 點擊📞 聯絡取得聯絡資訊\n- 直接輸入問題，AI 為你解答");
+      chatAppend("bot", "你可以：\n- 輸入**取餐碼**查詢餐點狀況\n- 點擊📋 訂單狀況查詢進度\n- 點擊📞 聯絡取得聯絡資訊\n- 點擊📝 提交意見留下建議\n- 直接輸入問題，AI 為你解答");
+    } else if (type === "feedback") {
+      chatAppend("user", "📝 提交意見");
+      showFeedbackForm();
     }
+  }
+
+  function showFeedbackForm() {
+    // 若已有表單則不重複建立
+    if (document.getElementById("feedbackFormEl")) return;
+    const messages = document.getElementById("chatMessages");
+    const el = document.createElement("div");
+    el.className = "cb-bot";
+    el.id = "feedbackFormEl";
+    el.innerHTML = `
+      <p style="margin-bottom:0.4rem;font-weight:600">請輸入您的意見或建議：</p>
+      <textarea id="feedbackText" rows="3"
+        style="width:100%;border:1px solid #e2e8f0;border-radius:0.5rem;padding:0.4rem 0.6rem;font-size:0.78rem;resize:none;outline:none;font-family:inherit"
+        placeholder="例如：希望增加素食選項…"></textarea>
+      <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
+        <button onclick="submitFeedback()"
+          style="flex:1;background:#2563eb;color:#fff;border:none;border-radius:0.5rem;padding:0.35rem 0;font-size:0.78rem;cursor:pointer">提交</button>
+        <button onclick="cancelFeedback()"
+          style="flex:1;background:#f1f5f9;color:#475569;border:none;border-radius:0.5rem;padding:0.35rem 0;font-size:0.78rem;cursor:pointer">取消</button>
+      </div>`;
+    messages.appendChild(el);
+    el.scrollIntoView({ behavior: "smooth", block: "end" });
+    setTimeout(() => document.getElementById("feedbackText")?.focus(), 100);
+  }
+
+  async function submitFeedback() {
+    const text = document.getElementById("feedbackText")?.value?.trim();
+    if (!text || text.length < 2) return;
+    document.getElementById("feedbackFormEl")?.remove();
+
+    const session = typeof getSession === "function" ? getSession() : null;
+    chatShowTyping();
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text, userId: session?.userId ?? null, phone: session?.phone ?? null })
+      });
+      chatRemoveTyping();
+      chatAppend("bot", res.ok
+        ? "✅ 已收到您的意見，感謝！管理員將稍後跟進回覆。"
+        : "❌ 提交失敗，請稍後再試。");
+    } catch (_) {
+      chatRemoveTyping();
+      chatAppend("bot", "❌ 連線異常，請稍後再試。");
+    }
+  }
+
+  function cancelFeedback() {
+    document.getElementById("feedbackFormEl")?.remove();
+    chatAppend("bot", "已取消。如有需要可隨時點擊「📝 提交意見」。");
   }
 
   // ── 主送出函數 ───────────────────────────────────────────
