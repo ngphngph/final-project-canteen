@@ -15,9 +15,6 @@ public class ChatController {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    private static final String GEMINI_BASE_URL =
-        "https://generativelanguage.googleapis.com/v1beta/openai";
-
     private static final String SYSTEM_PROMPT =
         "你是 Canteen 校園餐廳的智能助理，透過網頁聊天介面協助用戶。\n" +
         "語氣溫和真誠，回答簡短精煉，用繁體中文回覆（除非用戶用其他語言）。\n" +
@@ -27,7 +24,7 @@ public class ChatController {
 
     @PostConstruct
     public void init() {
-        this.chatClient = new GeminiChatClient(geminiApiKey, GEMINI_BASE_URL);
+        this.chatClient = new GeminiChatClient(geminiApiKey);
     }
 
     @PostMapping
