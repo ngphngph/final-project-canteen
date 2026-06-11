@@ -1345,8 +1345,9 @@
   #chatInput:focus { border-color:#2563eb; }
   #chatSend {
     padding:0.4rem 0.75rem; background:#2563eb; color:#fff; border:none;
-    border-radius:0.75rem; font-size:0.8rem; cursor:pointer;
+    border-radius:0.75rem; font-size:0.8rem; cursor:pointer; transition:opacity 0.2s;
   }
+  #chatSend:disabled, #chatInput:disabled { opacity:0.45; cursor:not-allowed; }
   .cb-typing span {
     display:inline-block; width:5px; height:5px; border-radius:50%;
     background:#94a3b8; margin:0 1px; animation:cbBlink 1.2s infinite;
@@ -1381,12 +1382,7 @@
 </div>
 
 <script>
-  const CHAT_SYSTEM = `你是 Canteen 校園餐廳的智能助理，透過網頁聊天介面協助用戶。
-語氣溫和真誠，回答簡短精煉，用繁體中文回覆（除非用戶用其他語言）。
-多用換行與列點，重要字詞加**粗體**，切勿編造資訊。`;
-
   const PICKUP_RE2 = /\b([0-9]{4})-([0-9]{3})\b/;
-  const chatHist = [];
   let chatOpen = false;
   let chatAwaitCode = false;
   let chatInited = false;
@@ -1415,21 +1411,35 @@
     }
   }
 
+  // ── 主送出函數 ───────────────────────────────────────────
   async function chatSend() {
     const input = document.getElementById("chatInput");
-    const text = input.value.trim();
-    if (!text) return;
+    const btn   = document.getElementById("chatSend");
+    const text  = input.value.trim();
+
+    // 前端守門：少於 2 字直接攔截，不消耗任何 API 配額
+    if (text.length < 2) return;
+
+    // 立刻鎖定輸入區，防止連點重複送出
+    input.disabled = btn.disabled = true;
     input.value = "";
+
     chatAppend("user", text);
     const match = text.match(PICKUP_RE2);
     chatAwaitCode = false;
+
     if (match) {
       await chatQueryPickup(`${match[1]}-${match[2]}`);
-      return;
+    } else {
+      await chatCallAI(text);
     }
-    await chatCallAI(text);
+
+    // 無論成功或失敗，always 解鎖輸入區
+    input.disabled = btn.disabled = false;
+    input.focus();
   }
 
+  // ── 取餐碼查詢 ───────────────────────────────────────────
   async function chatQueryPickup(code) {
     chatShowTyping();
     try {
@@ -1449,24 +1459,45 @@
     }
   }
 
+  // ── AI 對話核心 ──────────────────────────────────────────
   async function chatCallAI(text) {
-    chatHist.push({ role: "user", text });
+    // 打包 Payload：固定只有 1 條用戶訊息，絕不帶任何歷史對話。
+    // 後端 ChatController 會自動加入 system prompt，無需前端傳遞。
+    const payload = { messages: [{ role: "user", text }] };
+
     chatShowTyping();
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: chatHist }),
+        body: JSON.stringify(payload),
       });
       chatRemoveTyping();
-      if (!res.ok) { chatAppend("bot", `錯誤 ${res.status}，請確認服務設定。`); return; }
-      const data = await res.json();
-      const reply = data?.reply || "服務暫時無法回應，請稍後再試。";
+
+      // 精準攔截各 HTTP 狀態碼
+      if (!res.ok) {
+        if (res.status === 429) {
+          // 429 = 配額耗盡 / 呼叫過頻（Gemini Resource Exhausted）
+          chatAppend("bot", "⚠️ 系統呼叫太頻繁，請等待 30 秒後再試。");
+        } else if (res.status === 503 || res.status === 500) {
+          // 503/500 = 伺服器過載或暫時不可用
+          chatAppend("bot", "⚙️ 伺服器目前忙碌中，請稍候再試。");
+        } else {
+          chatAppend("bot", `❌ 請求失敗（HTTP ${res.status}），請稍後再試。`);
+        }
+        return;
+      }
+
+      // 正常 200：解析回應，取出 AI 回覆文字
+      // 用 .catch(() => null) 防止 body 非 JSON 時二次拋錯
+      const data  = await res.json().catch(() => null);
+      const reply = data?.reply ?? "服務暫時無法回應，請稍後再試。";
       chatAppend("bot", reply);
-      chatHist.push({ role: "model", text: reply });
+
     } catch (_) {
+      // 兜底 catch：網路中斷、CORS 拒絕、DNS 失敗等所有 Runtime 例外
       chatRemoveTyping();
-      chatAppend("bot", "連線出現問題，請稍後再試。");
+      chatAppend("bot", "❌ 連線異常，請檢查網路連線。");
     }
   }
 
