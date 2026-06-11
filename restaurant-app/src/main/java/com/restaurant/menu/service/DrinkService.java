@@ -86,7 +86,6 @@ public class DrinkService {
     @Transactional(readOnly = true)
     @Cacheable("drinks-today")
     public List<DrinkResponse> getTodayForClient() {
-        orderWindowService.assertOpen();
         return drinkRepository.findAllAvailable().stream().map(DrinkService::toResponse).toList();
     }
 
