@@ -70,6 +70,12 @@ public class ChatController {
 
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
         JsonNode result = mapper.readTree(response.body());
+
+        if (response.statusCode() != 200 || !result.has("candidates")) {
+            String errMsg = result.path("error").path("message").asText(response.body());
+            return ResponseEntity.ok(Map.of("reply", "[Gemini錯誤] " + errMsg));
+        }
+
         String reply = result.path("candidates").path(0)
             .path("content").path("parts").path(0)
             .path("text").asText("服務暫時無法回應，請稍後再試。");
