@@ -136,6 +136,7 @@ public class DishService {
     @Transactional(readOnly = true)
     @Cacheable("dishes-today")
     public List<DishResponse> getTodayForClient() {
+        orderWindowService.assertOpen();
         String dayOfWeek = toChineseDay(LocalDate.now(orderWindowService.getZoneId()).getDayOfWeek().name());
         return dishRepository.findTodayAvailable(dayOfWeek).stream().map(DishService::toResponse).toList();
     }
