@@ -402,7 +402,7 @@
             const _s = getSession();
             const ph = o.phone ? o.phone.slice(-4) : o.userId ? String(o.userId % 10000).padStart(4,"0") : (_s && _s.phone ? _s.phone.slice(-4) : "????");
             const ord = String((o.backendOrderId || o.id) % 1000).padStart(3,"0");
-            return `<p class="mt-1 text-slate-500">取餐碼：<span class="font-mono font-semibold text-slate-700">${ph}-${ord}</span> <a href="https://m.me/1206541779201305" target="_blank" style="font-size:0.7rem;padding:0.15rem 0.45rem;border-radius:0.4rem;background:#2563eb;color:#fff;text-decoration:none;vertical-align:middle">💬 查閱狀況</a></p>`;
+            return `<p class="mt-1 text-slate-500">取餐碼：<span class="font-mono font-semibold text-slate-700">${ph}-${ord}</span> <a href="/status.html?code=${ph}-${ord}" target="_blank" style="font-size:0.7rem;padding:0.15rem 0.45rem;border-radius:0.4rem;background:#2563eb;color:#fff;text-decoration:none;vertical-align:middle">查閱狀況</a></p>`;
           })() : ""}
           ${
             o.status === "PICKED_UP"
