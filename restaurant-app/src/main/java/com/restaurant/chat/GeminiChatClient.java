@@ -25,7 +25,7 @@ import java.util.List;
 public class GeminiChatClient {
 
     private static final String ENDPOINT =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent";
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent";
 
     private final String apiKey;
     private final HttpClient http;
