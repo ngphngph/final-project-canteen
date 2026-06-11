@@ -137,8 +137,20 @@ public class DishService {
     @Cacheable("dishes-today")
     public List<DishResponse> getTodayForClient() {
         orderWindowService.assertOpen();
-        String dayOfWeek = LocalDate.now(orderWindowService.getZoneId()).getDayOfWeek().name();
+        String dayOfWeek = toChineseDay(LocalDate.now(orderWindowService.getZoneId()).getDayOfWeek().name());
         return dishRepository.findTodayAvailable(dayOfWeek).stream().map(DishService::toResponse).toList();
+    }
+
+    private static String toChineseDay(String englishDay) {
+        return switch (englishDay) {
+            case "MONDAY"    -> "週一";
+            case "TUESDAY"   -> "週二";
+            case "WEDNESDAY" -> "週三";
+            case "THURSDAY"  -> "週四";
+            case "FRIDAY"    -> "週五";
+            case "SATURDAY"  -> "週六";
+            default          -> englishDay;
+        };
     }
 
     private Dish findEntity(Long id) {
