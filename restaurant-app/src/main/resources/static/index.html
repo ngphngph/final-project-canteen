@@ -1422,9 +1422,9 @@
     input.value = "";
     chatAppend("user", text);
     const match = text.match(PICKUP_RE2);
-    if (match || chatAwaitCode) {
-      chatAwaitCode = false;
-      await chatQueryPickup(match ? `${match[1]}-${match[2]}` : text.toUpperCase());
+    chatAwaitCode = false;
+    if (match) {
+      await chatQueryPickup(`${match[1]}-${match[2]}`);
       return;
     }
     await chatCallAI(text);
