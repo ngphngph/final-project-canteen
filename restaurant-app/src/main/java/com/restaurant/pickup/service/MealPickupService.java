@@ -87,8 +87,7 @@ public class MealPickupService {
     public PickupStatusResp getStatusByCode(String code) {
         List<MealPickup> pickups = repository.findByMethod(code.toUpperCase());
         if (pickups.isEmpty()) return new PickupStatusResp(code, "NOT_FOUND", null);
-        boolean allDone = pickups.stream().allMatch(p -> p.getActualTime() != null);
-        String status = allDone ? "READY" : "PENDING";
+        String status = "READY";
         String expectedTime = pickups.stream()
                 .map(MealPickup::getExpectedTime)
                 .filter(t -> t != null)
