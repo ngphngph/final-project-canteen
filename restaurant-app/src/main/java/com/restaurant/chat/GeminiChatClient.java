@@ -23,7 +23,7 @@ import java.util.List;
 public class GeminiChatClient {
 
     private static final String ENDPOINT =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
     private final String apiKey;
     private final HttpClient http;
@@ -81,8 +81,11 @@ public class GeminiChatClient {
         genConfig.put("maxOutputTokens", 400);
         body.set("generationConfig", genConfig);
 
+        String url = ENDPOINT + "?key=" + apiKey;
+        System.out.println("Calling URL: " + url.replace(apiKey, "REDACTED")); // 確認路徑，隱藏 key
+
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(ENDPOINT + "?key=" + apiKey))
+                .uri(URI.create(url))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();

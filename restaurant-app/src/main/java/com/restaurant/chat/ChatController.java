@@ -24,7 +24,11 @@ public class ChatController {
 
     @PostConstruct
     public void init() {
-        this.chatClient = new GeminiChatClient(geminiApiKey);
+        String key = (geminiApiKey != null) ? geminiApiKey.trim() : "";
+        if (key.isEmpty()) {
+            throw new IllegalStateException("GEMINI_API_KEY 未設定，請在 Zeabur Variables 中加入此環境變數。");
+        }
+        this.chatClient = new GeminiChatClient(key);
     }
 
     @PostMapping
