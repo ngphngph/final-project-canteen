@@ -84,10 +84,19 @@ public class MealPickupService {
                 .stream().map(p -> toResponse(p, "待取餐")).toList();
     }
 
+    @Transactional
+    public void markReadyByCode(String code) {
+        List<MealPickup> pickups = repository.findByMethod(code.toUpperCase());
+        Instant now = Instant.now();
+        pickups.forEach(p -> { if (p.getActualTime() == null) p.setActualTime(now); });
+        repository.saveAll(pickups);
+    }
+
     public PickupStatusResp getStatusByCode(String code) {
         List<MealPickup> pickups = repository.findByMethod(code.toUpperCase());
         if (pickups.isEmpty()) return new PickupStatusResp(code, "NOT_FOUND", null);
-        String status = "READY";
+        boolean allDone = pickups.stream().allMatch(p -> p.getActualTime() != null);
+        String status = allDone ? "READY" : "PENDING";
         String expectedTime = pickups.stream()
                 .map(MealPickup::getExpectedTime)
                 .filter(t -> t != null)

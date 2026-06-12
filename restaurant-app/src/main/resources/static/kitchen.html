@@ -488,7 +488,7 @@
               </div>
               <div class="flex flex-wrap gap-2 items-center" onclick="event.stopPropagation()">
                 ${orderStatusBadge(status)}
-                ${active ? `<button type="button" data-order-id="${o.orderId}"
+                ${active ? `<button type="button" data-order-id="${o.orderId}" data-code="${pickupCode}"
                   class="complete-btn present-btn-primary px-3 py-1.5 text-sm">✅ 出餐完成</button>` : ""}
                 <span class="text-slate-500 text-xs pointer-events-none chevron">${isExpanded ? "▲" : "▼"}</span>
               </div>
@@ -525,11 +525,13 @@
       el.querySelectorAll(".complete-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
           const orderId = Number(btn.dataset.orderId);
+          const pickupCode = btn.dataset.code;
           btn.disabled = true;
           btn.textContent = "處理中…";
           try {
             const res = await fetch(`${ORDER_BASE}/orders/${orderId}/status?status=COMPLETE`, { method: "PUT" });
             if (!res.ok) throw new Error("HTTP " + res.status);
+            await fetch(`${PICKUP_BASE}/api/pickups/ready?code=${encodeURIComponent(pickupCode)}`, { method: "PUT" });
             lastOrdersJson = ""; // force re-render after status change
             await renderOrderList();
           } catch (e) {

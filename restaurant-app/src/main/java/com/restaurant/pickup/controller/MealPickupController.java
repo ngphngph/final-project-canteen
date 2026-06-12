@@ -34,6 +34,12 @@ public class MealPickupController {
         return ResponseEntity.ok(service.getStatusByCode(code));
     }
 
+    @PutMapping("/ready")
+    public ResponseEntity<Void> markReady(@RequestParam String code) {
+        service.markReadyByCode(code);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/item/{itemId}")
     public ResponseEntity<PickupResponse> getByItem(@PathVariable Long itemId) {
         return ResponseEntity.ok(service.getByItemId(itemId));

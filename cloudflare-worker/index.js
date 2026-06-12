@@ -13,16 +13,23 @@ export default {
 
     if (request.method === "POST") {
       const body = await request.json();
+      console.log(`[0] POST received: ${JSON.stringify(body).slice(0, 200)}`);
       const msg  = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-      if (!msg || msg.type !== "text") return new Response("OK");
+      if (!msg || msg.type !== "text") {
+        console.log(`[0] no text message, skipping`);
+        return new Response("OK");
+      }
 
       const from = msg.from;
       const text = msg.text.body.trim().toUpperCase();
+
+      console.log(`[1] from=${from} text=${text}`);
 
       const apiRes = await fetch(
         `${env.JAVA_API_BASE}/api/pickups/status?code=${encodeURIComponent(text)}`
       );
       const data = apiRes.ok ? await apiRes.json() : null;
+      console.log(`[2] apiStatus=${apiRes.status} data=${JSON.stringify(data)}`);
 
       let reply;
       if (!data || data.status === "NOT_FOUND") {
@@ -32,8 +39,9 @@ export default {
       } else {
         reply = `取餐碼 (${data.code}) 這單號還在製作中，請稍候。`;
       }
+      console.log(`[3] reply=${reply}`);
 
-      await fetch(
+      const waRes = await fetch(
         `https://graph.facebook.com/v19.0/${env.PHONE_NUMBER_ID}/messages`,
         {
           method: "POST",
@@ -49,6 +57,8 @@ export default {
           }),
         }
       );
+      const waBody = await waRes.text();
+      console.log(`[4] waStatus=${waRes.status} waBody=${waBody}`);
 
       return new Response("OK");
     }
