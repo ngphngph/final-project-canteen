@@ -1,41 +1,20 @@
 services:
-  postgres:
-    image: postgres:18
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "123456"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 400m
-
   restaurant-app:
     build: ./restaurant-app
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/restaurant_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: "123456"
       IMAGE_UPLOAD_DIR: /app/uploads/menu
       JAVA_TOOL_OPTIONS: -Xmx480m -Xms128m -XX:+UseContainerSupport
-      # Override these in production:
+      # Set these in Zeabur environment variables:
+      # SPRING_DATASOURCE_URL: jdbc:postgresql://...neon.tech/restaurant_db?sslmode=require
+      # SPRING_DATASOURCE_USERNAME: ...
+      # SPRING_DATASOURCE_PASSWORD: ...
       # STRIPE_SECRET_KEY: sk_live_...
       # JWT_SECRET: your-32-char-secret
       # SECURITY_ADMIN_PASSWORD: strongpassword
       # SECURITY_KITCHEN_PASSWORD: strongpassword
+      # GEMINI_API_KEY: ...
     volumes:
       - uploads_data:/app/uploads/menu
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
     deploy:
       resources:
@@ -54,5 +33,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
   uploads_data:
