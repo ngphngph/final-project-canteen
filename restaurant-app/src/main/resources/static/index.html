@@ -361,6 +361,44 @@
     .cb-typing span:nth-child(2) { animation-delay: .2s; }
     .cb-typing span:nth-child(3) { animation-delay: .4s; }
     @keyframes cbBlink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+    /* ── ORDER BOARD ── */
+    .order-board {
+      background: #0D1117;
+      border-bottom: 2px solid #1C2333;
+      padding: 16px 28px;
+    }
+    .order-board-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .board-col-wrap { border-radius: 6px; overflow: hidden; }
+    .board-col-head {
+      padding: 8px 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .board-col-wrap.preparing .board-col-head { background: #1C1500; border-bottom: 2px solid #F59E0B; }
+    .board-col-wrap.ready     .board-col-head { background: #071510; border-bottom: 2px solid #10B981; }
+    .board-col-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    }
+    .board-col-wrap.preparing .board-col-title { color: #F59E0B; }
+    .board-col-wrap.ready     .board-col-title { color: #10B981; }
+    .board-col-body {
+      background: #0D1117;
+      padding: 10px 12px;
+      display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px;
+    }
+    .board-tile {
+      border-radius: 4px; padding: 6px 14px; text-align: center;
+      font-family: 'Courier New', monospace; font-size: 15px; font-weight: 700; letter-spacing: 2px;
+    }
+    .board-col-wrap.preparing .board-tile { background: #1C1500; color: #FCD34D; border: 1px solid #F59E0B44; }
+    .board-col-wrap.ready     .board-tile { background: #071510; color: #6EE7B7; border: 1px solid #10B98166;
+      animation: board-pulse 2s ease-in-out infinite; }
+    @keyframes board-pulse {
+      0%,100% { border-color: #10B98155; } 50% { border-color: #10B981BB; }
+    }
+    .board-none { font-size: 11px; color: #2D3748; letter-spacing: 2px; padding: 6px 0; text-transform: uppercase; }
   </style>
 </head>
 <body>
@@ -375,7 +413,6 @@
     </div>
     <div class="lux-header-right">
       <span id="periodBadge" class="lux-badge lux-badge-open">訂購時段</span>
-      <a href="/board.html" target="_blank" class="lux-arch-link" title="取餐等候板">等候板</a>
       <a href="/architecture.html" target="_blank" class="lux-arch-link" title="系統架構說明 v2">架構</a>
 
       <!-- 未登入 -->
@@ -399,6 +436,28 @@
     </div>
   </div>
 </header>
+
+<!-- McDonald's-style Order Board -->
+<div class="order-board">
+  <div class="order-board-inner">
+    <div class="board-col-wrap preparing">
+      <div class="board-col-head">
+        <span class="board-col-title">備餐中 · Preparing</span>
+      </div>
+      <div id="boardPreparing" class="board-col-body">
+        <span class="board-none">暫無訂單</span>
+      </div>
+    </div>
+    <div class="board-col-wrap ready">
+      <div class="board-col-head">
+        <span class="board-col-title">請取餐 · Ready</span>
+      </div>
+      <div id="boardReady" class="board-col-body">
+        <span class="board-none">暫無訂單</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 <main class="lux-main">
 
@@ -1440,6 +1499,39 @@
     }
     if (changed) { saveOrders(orders); renderMyOrders(); }
   }
+
+  // ── Order Board ──────────────────────────────────────
+  let _boardJson = "";
+
+  function _boardPickupCode(o) {
+    const ph = o.phone ? String(o.phone).slice(-4) : String(o.userId % 10000).padStart(4, "0");
+    return ph + "-" + String(o.orderId % 1000).padStart(3, "0");
+  }
+
+  function _renderBoardCol(id, orders) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = orders.length
+      ? orders.map(o => `<span class="board-tile">${_boardPickupCode(o)}</span>`).join("")
+      : '<span class="board-none">暫無訂單</span>';
+  }
+
+  async function refreshBoard() {
+    try {
+      const res = await fetch("/orders/today");
+      if (!res.ok) return;
+      const orders = await res.json();
+      const json = JSON.stringify(orders);
+      if (json === _boardJson) return;
+      _boardJson = json;
+      _renderBoardCol("boardPreparing", orders.filter(o => o.orderStatus === "DEPOSIT_PAID" || o.orderStatus === "FULLY_PAID"));
+      _renderBoardCol("boardReady",     orders.filter(o => o.orderStatus === "COMPLETE"));
+    } catch (_) {}
+  }
+
+  refreshBoard();
+  setInterval(refreshBoard, 20000);
+  // ─────────────────────────────────────────────────────
 
   fetchMenuFromApi();
   renderCart();
