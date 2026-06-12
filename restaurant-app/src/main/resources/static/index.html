@@ -370,30 +370,36 @@
       position: sticky; top: 64px;
       max-height: calc(100vh - 80px);
       overflow-y: auto;
-      background: #0D1117;
+      border: 1px solid var(--lux-border);
       border-radius: 4px;
+      background: var(--lux-surface);
       display: flex; flex-direction: column;
     }
-    .board-section { padding: 12px 10px; }
-    .board-section + .board-section { border-top: 1px solid #1C2333; }
+    .board-section { padding: 16px 14px; }
+    .board-section + .board-section { border-top: 1px solid var(--lux-border); }
     .board-section-title {
-      font-size: 9px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
-      margin-bottom: 8px; padding: 0 2px;
+      font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 10px; color: var(--lux-muted);
     }
-    .board-section.preparing .board-section-title { color: #F59E0B; }
-    .board-section.ready     .board-section-title { color: #10B981; }
     .board-section-tiles { display: flex; flex-direction: column; gap: 6px; }
     .board-tile {
-      border-radius: 3px; padding: 7px 8px; text-align: center;
-      font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      border-radius: 2px; padding: 7px 8px; text-align: center;
+      font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+      border: 1px solid; transition: border-color 0.2s;
     }
-    .board-section.preparing .board-tile { background: #1C1500; color: #FCD34D; border: 1px solid #F59E0B33; }
-    .board-section.ready     .board-tile { background: #071510; color: #6EE7B7; border: 1px solid #10B98144;
-      animation: board-pulse 2.5s ease-in-out infinite; }
+    .board-section.preparing .board-tile {
+      color: var(--lux-warn); border-color: var(--lux-warn);
+      background: transparent;
+    }
+    .board-section.ready .board-tile {
+      color: var(--lux-success); border-color: var(--lux-success);
+      background: transparent;
+      animation: board-pulse 2.5s ease-in-out infinite;
+    }
     @keyframes board-pulse {
-      0%,100% { border-color: #10B98144; } 50% { border-color: #10B981AA; }
+      0%,100% { opacity: 0.75; } 50% { opacity: 1; }
     }
-    .board-none { font-size: 10px; color: #2D3748; letter-spacing: 1px; text-transform: uppercase; padding: 4px 2px; }
+    .board-none { font-size: 10px; color: var(--lux-hint); letter-spacing: 1px; padding: 2px 0; }
   </style>
 </head>
 <body>
