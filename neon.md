@@ -1,14 +1,27 @@
 # Neon Database Setup & Migration
 
+> ⚠️ **DUMP FIRST, THEN CHANGE yml.**
+> Before touching `docker-compose.yml` or Zeabur env vars — dump your data first.
+> Changing the yml and redeploying will restart containers. If postgres data is not dumped yet, you may lose access to it.
+
+
+
 ## Quick Reference — Dump & Restore
 
-```powershell
-# 1. Dump from local Docker (run from project root)
-docker exec -t bootcamp-restaurant-postgres-1 pg_dump -U postgres --no-owner --no-acl restaurant_db > dump.sql
+Run these in **Git Bash**:
 
-# 2. Restore to Neon (replace URL with your actual Neon connection string)
-docker run --rm -i postgres:18 psql "postgresql://kim:password@ep-xxx.ap-southeast-1.aws.neon.tech/restaurant_db?sslmode=require" < dump.sql
+```bash
+# 1. Dump from Zeabur PostgreSQL
+docker run --rm postgres:18 pg_dump "postgresql://postgres:password@xxx.ap-east-1.aws.zeabur.com:12345/restaurant_db" --no-owner --no-acl > dump.sql
+
+# 2. Restore to Neon
+docker run --rm -i postgres:18 psql "postgresql://neondb_owner:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" < dump.sql
+
+# 3. Verify
+docker run --rm postgres:18 psql "postgresql://neondb_owner:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" -c "\\dt"
 ```
+
+> No `$` prefix — that is the shell prompt, not part of the command.
 
 ---
 
@@ -44,16 +57,18 @@ Redeploy → Spring Boot `ddl-auto: update` auto-creates all tables on first boo
 
 ---
 
-## 3. Dump Existing Data (from local Docker)
+## 3. Dump Existing Data (from Zeabur)
 
-Make sure local Docker Compose is running (`docker-compose up -d`), then:
+Go to **Zeabur Dashboard → your PostgreSQL service → Connection** and copy the connection string. It looks like:
+
+```
+postgresql://postgres:password@xxx.ap-east-1.aws.zeabur.com:12345/restaurant_db
+```
+
+Then run (no local PostgreSQL needed — uses a temporary Docker container):
 
 ```powershell
-# Find the postgres container name
-docker ps
-
-# Dump to dump.sql (replace 'bootcamp-restaurant-postgres-1' with your actual container name)
-docker exec -t bootcamp-restaurant-postgres-1 pg_dump -U postgres --no-owner --no-acl restaurant_db > dump.sql
+docker run --rm postgres:18 pg_dump "postgresql://postgres:password@xxx.ap-east-1.aws.zeabur.com:12345/restaurant_db" --no-owner --no-acl > dump.sql
 ```
 
 `dump.sql` will be created in your current directory.
@@ -85,13 +100,21 @@ psql --version
 
 ## 5. Verify
 
-Connect to Neon and check tables exist:
+Connect to Neon and check tables exist.
 
-```powershell
-docker run --rm -it postgres:18 psql "postgresql://kim:password@ep-xxx.ap-southeast-1.aws.neon.tech/restaurant_db?sslmode=require" -c "\dt"
+**Git Bash (MINGW64) — use `\\dt` to avoid path conversion:**
+```bash
+docker run --rm postgres:18 psql "postgresql://neondb_owner:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" -c "\\dt"
 ```
 
-You should see all tables: `users`, `dishes`, `drinks`, `menus`, `orders`, `order_items`, `wallets`, `wallet_transactions`, etc.
+**PowerShell:**
+```powershell
+docker run --rm postgres:18 psql "postgresql://neondb_owner:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" -c "\dt"
+```
+
+> Note: no `-it` flag — that requires `winpty` in Git Bash. `-c "..."` is non-interactive so it's not needed.
+
+You should see all tables: `base_users`, `dishes`, `drinks`, `menus`, `orders`, `order_items`, `wallets`, `wallet_transactions`, etc.
 
 ---
 
