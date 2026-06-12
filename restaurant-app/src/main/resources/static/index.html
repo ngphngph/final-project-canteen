@@ -125,15 +125,59 @@
 
     /* ── LAYOUT ── */
     .lux-main {
-      max-width: 1280px; margin: 0 auto;
+      max-width: 1400px; margin: 0 auto;
       padding: 36px 28px;
-      display: grid; grid-template-columns: 1fr 320px; gap: 36px;
+      display: grid; grid-template-columns: 180px 1fr 320px; gap: 28px;
       align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .lux-main { grid-template-columns: 1fr 320px; }
+      .lux-orders-panel { display: none !important; }
     }
     @media (max-width: 900px) {
       .lux-main { grid-template-columns: 1fr; }
       .lux-sidebar { position: static; }
     }
+
+    /* ── ORDERS PANEL (left) ── */
+    .lux-orders-panel {
+      position: sticky; top: 64px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+      border: 1px solid var(--lux-border);
+      border-radius: 4px;
+      background: var(--lux-surface);
+    }
+    .lux-orders-panel-header {
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--lux-border);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; background: var(--lux-surface); z-index: 1;
+    }
+    .lux-orders-panel-body { padding: 8px 10px; }
+    .lux-order-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 0; border-bottom: 1px solid var(--lux-border);
+      cursor: pointer;
+    }
+    .lux-order-row:last-child { border-bottom: none; }
+    .lux-order-row:hover .lux-order-num { color: var(--lux-gold-dark); }
+    .lux-order-num {
+      font-family: monospace; font-size: 12px;
+      color: var(--lux-ink-soft); letter-spacing: 0.5px;
+    }
+    .lux-order-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-pending  { background: var(--lux-hint); }
+    .dot-deposit  { background: var(--lux-gold); }
+    .dot-paid     { background: var(--lux-gold-dark); }
+    .dot-complete { background: var(--lux-success); }
+    .lux-refresh-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 12px; color: var(--lux-muted); padding: 0; line-height: 1;
+    }
+    .lux-refresh-btn:hover { color: var(--lux-gold-dark); }
 
     /* ── SECTION HEADER ── */
     .lux-section-block { margin-bottom: 48px; }
@@ -400,6 +444,17 @@
 </header>
 
 <main class="lux-main">
+
+  <!-- Orders Panel (left) -->
+  <aside class="lux-orders-panel">
+    <div class="lux-orders-panel-header">
+      <span class="lux-sidebar-label" style="margin-bottom:0;">MY ORDERS</span>
+      <button type="button" class="lux-refresh-btn" onclick="refreshOrdersPanel()" title="重新整理">↻</button>
+    </div>
+    <div id="ordersPanelBody" class="lux-orders-panel-body">
+      <p class="lux-empty-state">今日尚無訂單</p>
+    </div>
+  </aside>
 
   <!-- Menu Section -->
   <section>
@@ -1106,7 +1161,7 @@
       });
       dishes.forEach(d => { d.status = d.balance > 0 ? "ON_LIST" : "SOLD_OUT"; });
       cart.length = 0;
-      reloadPublishedMenu(); renderCart(); closePreviewModal(); renderMyOrders();
+      reloadPublishedMenu(); renderCart(); closePreviewModal(); renderMyOrders(); refreshOrdersPanel();
       const statusLabel = backendOrder.orderStatus === "DEPOSIT_PAID" ? "已付訂金 ($50)" : "已全額付款";
       alert(`訂單已送出！\n訂單編號：#${backendOrder.orderId}\n總計：$${backendOrder.totalAmt}\n狀態：${statusLabel}\n感謝您的訂購，謝謝！`);
     } catch (_) {
@@ -1200,8 +1255,41 @@
     saveOrders(orders);
   }
 
+  let _ordersPanelJson = "";
+
+  function _orderDotClass(status) {
+    if (status === "PICKED_UP") return "dot-complete";
+    if (status === "FULLY_PAID") return "dot-paid";
+    if (status === "DEPOSIT_PAID") return "dot-deposit";
+    return "dot-pending";
+  }
+
+  function renderOrdersPanelContent(orders) {
+    const el = document.getElementById("ordersPanelBody");
+    if (!el) return;
+    if (!orders.length) {
+      el.innerHTML = '<p class="lux-empty-state">今日尚無訂單</p>';
+      return;
+    }
+    el.innerHTML = orders.map(o =>
+      `<div class="lux-order-row" onclick="openAllOrdersModal()">
+        <span class="lux-order-num">#${String(o.backendOrderId || o.id).padStart(3,"0")}</span>
+        <span class="lux-order-dot ${_orderDotClass(o.status)}"></span>
+      </div>`
+    ).join("");
+  }
+
+  async function refreshOrdersPanel() {
+    const orders = await _fetchAllOrders();
+    const json = JSON.stringify(orders.map(o => ({ id: o.id, status: o.status })));
+    if (json === _ordersPanelJson) return;
+    _ordersPanelJson = json;
+    renderOrdersPanelContent(orders);
+  }
+
   function refreshCustomerPage() {
-    reloadPublishedMenu(); renderMyOrders(); updateOrderWindowBadge(); silentRefreshAllOrdersModal();
+    reloadPublishedMenu(); renderMyOrders(); updateOrderWindowBadge();
+    silentRefreshAllOrdersModal(); refreshOrdersPanel();
   }
 
   // ── Wallet ──
@@ -1386,7 +1474,7 @@
         if (res.ok) {
           const data = await res.json();
           saveSession({ userId: data.userId, role: data.role.toLowerCase(), phone: data.phone });
-          closeLoginModal(); updateAuthUI(); reloadPublishedMenu(); renderMyOrders(); return;
+          closeLoginModal(); updateAuthUI(); reloadPublishedMenu(); renderMyOrders(); refreshOrdersPanel(); return;
         }
       }
       alert("登入失敗，請確認電話號碼與密碼。");
@@ -1414,7 +1502,7 @@
   }
 
   function logout() {
-    clearSession(); frontendRole = "student"; updateAuthUI(); reloadPublishedMenu(); renderMyOrders();
+    clearSession(); frontendRole = "student"; updateAuthUI(); reloadPublishedMenu(); renderMyOrders(); refreshOrdersPanel();
   }
 
   async function syncPickupStatus() {
@@ -1443,6 +1531,7 @@
   fetchMenuFromApi();
   renderCart();
   renderMyOrders();
+  refreshOrdersPanel();
   updateAuthUI();
   updateOrderWindowBadge();
   syncPickupStatus();
