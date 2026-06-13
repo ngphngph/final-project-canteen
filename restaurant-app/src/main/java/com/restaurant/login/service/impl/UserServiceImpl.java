@@ -1,5 +1,6 @@
 package com.restaurant.login.service.impl;
 
+import com.restaurant.login.dto.AdminResetPasswordDto;
 import com.restaurant.login.dto.ChangePasswordDto;
 import com.restaurant.login.dto.LoginResp;
 import com.restaurant.login.dto.UserLoginDto;
@@ -175,5 +176,29 @@ public class UserServiceImpl implements UserService {
         targetUser.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(targetUser);
         return "密碼修改成功";
+    }
+
+    @Override
+    public String adminResetPassword(AdminResetPasswordDto dto) {
+        String adminPhone    = normalizeValue(dto.getAdminPhone());
+        String adminPassword = normalizeValue(dto.getAdminPassword());
+        String targetPhone   = normalizeValue(dto.getTargetPhone());
+        String newPassword   = normalizeValue(dto.getNewPassword());
+
+        if (!isEightDigits(adminPhone))  throw new BadRequestException("管理員電話號碼必須為 8 位數字");
+        if (!isEightDigits(adminPassword)) throw new BadRequestException("管理員密碼必須為 8 位數字");
+        if (!isEightDigits(targetPhone)) throw new BadRequestException("目標用戶電話號碼必須為 8 位數字");
+        if (!isEightDigits(newPassword)) throw new BadRequestException("新密碼必須為 8 位數字");
+
+        BaseUser admin = userRepository.findByPhoneAndRole(adminPhone, "ADMIN");
+        if (admin == null || !passwordEncoder.matches(adminPassword, admin.getPasswordHash()))
+            throw new UnauthorizedException("管理員驗證失敗");
+
+        BaseUser target = userRepository.findByPhone(targetPhone);
+        if (target == null) throw new BadRequestException("找不到此電話號碼的用戶");
+
+        target.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(target);
+        return "用戶 " + targetPhone + " 的密碼已重置成功";
     }
 }

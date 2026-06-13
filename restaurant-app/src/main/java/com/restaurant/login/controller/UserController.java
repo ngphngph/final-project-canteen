@@ -1,5 +1,6 @@
 package com.restaurant.login.controller;
 
+import com.restaurant.login.dto.AdminResetPasswordDto;
 import com.restaurant.login.dto.ChangePasswordDto;
 import com.restaurant.login.dto.LoginResp;
 import com.restaurant.login.dto.UserLoginDto;
@@ -34,5 +35,10 @@ public class UserController {
     @PostMapping("/change-password")
     public ResponseEntity<String> changePassword(@RequestBody ChangePasswordDto dto) {
         return ResponseEntity.ok(userService.updatePassword(dto));
+    }
+
+    @PutMapping("/admin/reset-password")
+    public ResponseEntity<String> adminResetPassword(@RequestBody AdminResetPasswordDto dto) {
+        return ResponseEntity.ok(userService.adminResetPassword(dto));
     }
 }
