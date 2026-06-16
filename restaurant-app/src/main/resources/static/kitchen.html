@@ -19,29 +19,29 @@
 <body class="present-ui present-kitchen">
 
   <!-- Kitchen Login Overlay -->
-  <div id="kitchenLoginOverlay" class="fixed inset-0 bg-slate-900/97 flex items-center justify-center z-50">
-    <div class="bg-slate-800 border border-slate-600 rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
+  <div id="kitchenLoginOverlay" class="fixed inset-0 bg-slate-900/95 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
       <div class="text-center mb-6">
         <span class="text-4xl">👨‍🍳</span>
-        <h1 class="font-bold text-xl text-white mt-2">Kitchen Panel</h1>
-        <p class="text-sm text-slate-400">廚房後台登入</p>
+        <h1 class="font-bold text-xl text-slate-800 mt-2">Kitchen Panel</h1>
+        <p class="text-sm text-slate-500">廚房後台登入</p>
       </div>
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">帳號</label>
+          <label class="block text-sm font-medium text-slate-700 mb-1">帳號</label>
           <input id="loginKitchenUser" type="text" placeholder="kitchen_user"
                  onkeydown="if(event.key==='Enter')document.getElementById('loginKitchenPass').focus()"
-                 class="w-full bg-slate-700 border border-slate-500 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+                 class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand-green" />
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">密碼</label>
+          <label class="block text-sm font-medium text-slate-700 mb-1">密碼</label>
           <input id="loginKitchenPass" type="password" placeholder="••••••••"
                  onkeydown="if(event.key==='Enter')kitchenLogin()"
-                 class="w-full bg-slate-700 border border-slate-500 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+                 class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand-green" />
         </div>
-        <p id="kitchenLoginErrMsg" class="text-red-400 text-sm hidden text-center"></p>
+        <p id="kitchenLoginErrMsg" class="text-red-600 text-sm hidden text-center"></p>
         <button type="button" onclick="kitchenLogin()"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
+                class="w-full present-btn-primary py-2.5 text-sm">
           登入廚房後台
         </button>
       </div>
@@ -50,11 +50,11 @@
 
   <div id="kitchenMainContent" class="min-h-screen flex hidden">
     <aside class="kitchen-sidebar w-56 shrink-0 hidden md:flex flex-col p-4">
-      <div class="flex items-center gap-2 mb-6 pb-4 border-b border-slate-600">
+      <div class="flex items-center gap-2 mb-6 pb-4 border-b border-white/20">
         <span class="text-2xl">👨‍🍳</span>
         <div>
-          <p class="font-bold text-emerald-400 text-sm">KITCHEN_USER</p>
-          <p class="text-xs text-slate-400">廚房後台</p>
+          <p class="font-bold text-white text-sm">KITCHEN_USER</p>
+          <p class="text-xs text-emerald-200/80">廚房後台</p>
         </div>
       </div>
       <nav class="space-y-1 text-sm flex-1">
@@ -64,27 +64,24 @@
         <a href="#">菜單管理</a>
         <a href="#">銷售報告</a>
       </nav>
-      <div class="pt-4 border-t border-slate-600 text-sm space-y-2">
-        <a href="#" class="text-slate-400">設定</a>
-        <a href="#" class="text-slate-400">登出</a>
+      <div class="pt-4 border-t border-white/20 text-sm space-y-2">
+        <a href="#" class="text-emerald-200/80">設定</a>
+        <a href="#" class="text-emerald-200/80">登出</a>
       </div>
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="px-5 py-4 border-b border-slate-700 flex flex-wrap justify-between items-center gap-3">
-        <div>
-          <h1 class="font-bold text-xl text-white">Kitchen 後台</h1>
-          <p class="text-xs text-slate-400">今日訂單 / 備貨 / 銷售報告</p>
-        </div>
-        <div class="flex items-center gap-4 text-sm text-right">
-          <div>
-            <p class="text-emerald-400">系統狀態：正常 ●</p>
-            <p id="kitchenClock" class="text-slate-400 text-xs mt-1"></p>
+      <header class="admin-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-semibold text-slate-700">午餐訂餐系統 — 廚房後台</h2>
+        <div class="flex items-center gap-4 text-sm text-slate-600">
+          <div class="text-right">
+            <p class="text-emerald-600 text-sm font-medium">系統狀態：正常 ●</p>
+            <p id="kitchenClock" class="text-slate-500 text-xs mt-0.5"></p>
           </div>
           <div class="flex flex-col items-end gap-1">
-            <span id="kitchenTopbarUser" class="text-slate-300 text-xs">廚房用戶</span>
+            <span id="kitchenTopbarUser" class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> 廚房用戶</span>
             <button type="button" onclick="kitchenLogout()"
-                    class="px-3 py-1 rounded border border-slate-600 text-slate-400 hover:bg-red-900/50 hover:border-red-500 hover:text-red-400 transition-colors text-xs font-medium">
+                    class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors text-xs font-medium">
               登出
             </button>
           </div>
@@ -93,40 +90,40 @@
 
       <main class="flex-1 p-5 space-y-5 max-w-7xl w-full mx-auto">
         <section class="grid lg:grid-cols-3 gap-4">
-          <div class="kitchen-card lg:col-span-2">
-            <div class="p-4 border-b border-slate-600 flex justify-between items-center">
-              <h2 class="font-semibold">今日訂單列表</h2>
+          <div class="present-card lg:col-span-2">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+              <h2 class="font-semibold text-slate-800">今日訂單列表</h2>
               <button type="button" id="refreshOrdersBtn" class="present-btn-primary text-xs px-3 py-1.5">重新整理</button>
             </div>
-            <div id="orderList" class="divide-y divide-slate-600"></div>
+            <div id="orderList" class="divide-y divide-slate-200"></div>
             <p class="p-3 text-xs text-slate-500 text-right">查看全部訂單 ›</p>
           </div>
 
-          <div class="kitchen-card">
-            <div class="p-4 border-b border-slate-600">
-              <h2 class="font-semibold">備貨量確認</h2>
+          <div class="present-card">
+            <div class="p-4 border-b border-slate-200">
+              <h2 class="font-semibold text-slate-800">備貨量確認</h2>
             </div>
             <div id="stockList" class="p-4 space-y-2 text-sm"></div>
           </div>
         </section>
 
-        <section class="kitchen-card p-4">
-          <h2 class="font-semibold mb-4">今日銷售報告</h2>
+        <section class="present-card p-4">
+          <h2 class="font-semibold text-slate-800 mb-4">今日銷售報告</h2>
           <div id="salesReport" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div>
         </section>
 
-        <section class="kitchen-card p-4">
-          <h2 class="font-semibold text-lg mb-4">核銷取餐</h2>
+        <section class="present-card p-4">
+          <h2 class="font-semibold text-lg text-slate-800 mb-4">核銷取餐</h2>
           <div class="grid sm:grid-cols-2 gap-3 max-w-lg">
             <div>
-              <label class="block text-xs text-slate-400 mb-1">取餐碼（如 0289-003）</label>
+              <label class="block text-xs text-slate-600 mb-1">取餐碼（如 0289-003）</label>
               <input id="verify-code" type="text" placeholder="0289-003"
-                class="w-full bg-slate-700 border border-slate-500 rounded px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-green" />
             </div>
             <div>
-              <label class="block text-xs text-slate-400 mb-1">取餐方式</label>
+              <label class="block text-xs text-slate-600 mb-1">取餐方式</label>
               <select id="verify-method"
-                class="w-full bg-slate-700 border border-slate-500 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-brand-green">
                 <option value="SELF_PICKUP">自取</option>
                 <option value="DELIVERY">送餐</option>
               </select>
@@ -138,22 +135,22 @@
         </section>
 
         <!-- 廚房 API 憑證設定 (hidden — login handled by overlay) -->
-        <section id="kitchenCredPanel" class="hidden kitchen-card p-4 border border-amber-500/40 bg-amber-900/20">
-          <h2 class="font-semibold text-sm text-amber-400 mb-2">🔐 廚房 API 憑證</h2>
+        <section id="kitchenCredPanel" class="hidden present-card p-4 border-2 border-amber-300 bg-amber-50">
+          <h2 class="font-semibold text-sm text-amber-800 mb-2">🔐 廚房 API 憑證</h2>
           <div class="flex flex-wrap gap-3 items-end">
-            <label class="block text-xs text-slate-400">帳號
+            <label class="block text-xs text-slate-600">帳號
               <input id="kitchenUser" type="text" value="kitchen_user"
-                class="mt-1 bg-slate-700 border border-slate-500 rounded px-2 py-1.5 w-36 text-white text-sm" /></label>
-            <label class="block text-xs text-slate-400">密碼
+                class="mt-1 border rounded px-2 py-1.5 w-36 text-sm" /></label>
+            <label class="block text-xs text-slate-600">密碼
               <input id="kitchenPass" type="password" placeholder="kitchen123"
-                class="mt-1 bg-slate-700 border border-slate-500 rounded px-2 py-1.5 w-36 text-white text-sm" /></label>
+                class="mt-1 border rounded px-2 py-1.5 w-36 text-sm" /></label>
             <button type="button" onclick="setKitchenCredentials()"
               class="present-btn-primary px-4 py-2 text-sm self-end">設定並載入菜單</button>
           </div>
         </section>
 
-        <section class="kitchen-card overflow-hidden">
-          <div class="p-4 border-b border-slate-600 flex flex-wrap justify-between items-center gap-3">
+        <section class="present-card overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
             <h2 class="font-semibold text-lg">Dish 菜單管理（廚房：更新庫存／備注）</h2>
             <button type="button" onclick="saveAllData()" class="present-btn-primary px-4 py-2 text-sm">💾 儲存庫存與備注</button>
           </div>
@@ -238,7 +235,7 @@
         kitchenUser = u;
         kitchenPass = p;
         try { sessionStorage.setItem("_ku", u); sessionStorage.setItem("_kp", p); } catch (_) {}
-        document.getElementById("kitchenTopbarUser").textContent = u;
+        document.getElementById("kitchenTopbarUser").innerHTML = `<span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> ${u}`;
         document.getElementById("kitchenLoginOverlay").classList.add("hidden");
         document.getElementById("kitchenMainContent").classList.remove("hidden");
         loadDishesFromApi();
@@ -309,10 +306,10 @@
       }
       dishBody.innerHTML = state.dishes.map(d => `
         <tr class="border-t">
-          <td class="px-4 py-3 text-slate-300 font-medium">${d.name}</td>
-          <td class="px-4 py-3"><input id="dish-balance-${d.id}" class="bg-slate-700 border border-slate-500 rounded px-2 py-1 w-20 text-white" type="number" min="0" value="${d.balance}" /></td>
+          <td class="px-4 py-3 text-slate-700 font-medium">${d.name}</td>
+          <td class="px-4 py-3"><input id="dish-balance-${d.id}" class="border border-slate-300 rounded px-2 py-1 w-20" type="number" min="0" value="${d.balance}" /></td>
           <td class="px-4 py-3">${dishStatusBadge(d.status)}</td>
-          <td class="px-4 py-3"><input id="dish-options-${d.id}" class="bg-slate-700 border border-slate-500 rounded px-2 py-1 w-56 text-white" value="${(d.options || []).join(", ")}" /></td>
+          <td class="px-4 py-3"><input id="dish-options-${d.id}" class="border border-slate-300 rounded px-2 py-1 w-56" value="${(d.options || []).join(", ")}" /></td>
         </tr>
       `).join("");
     }
@@ -352,12 +349,12 @@
 
     function orderStatusBadge(status) {
       const map = {
-        PENDING_PAY:  '<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300">待付款</span>',
-        DEPOSIT_PAID: '<span class="text-xs px-2 py-0.5 rounded bg-amber-900 text-amber-300">已付訂金・備餐中</span>',
-        FULLY_PAID:   '<span class="text-xs px-2 py-0.5 rounded bg-yellow-900 text-yellow-200">已全額付款・備餐中</span>',
-        COMPLETE:     '<span class="text-xs px-2 py-0.5 rounded bg-emerald-900 text-emerald-300">已完成出餐</span>',
+        PENDING_PAY:  '<span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600">待付款</span>',
+        DEPOSIT_PAID: '<span class="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">已付訂金・備餐中</span>',
+        FULLY_PAID:   '<span class="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">已全額付款・備餐中</span>',
+        COMPLETE:     '<span class="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">已完成出餐</span>',
       };
-      return map[status] || `<span class="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">${status}</span>`;
+      return map[status] || `<span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-500">${status}</span>`;
     }
 
     function getMenuItemName(menuId, menuType, unitPrice) {
@@ -401,7 +398,7 @@
           const remaining = Math.max(0, original - ordered);
           const soldOut = remaining <= 0 || d.status === "SOLD_OUT";
           return `
-            <div class="flex justify-between text-sm border-b border-slate-600/50 pb-2 ${soldOut ? "text-red-400" : "text-slate-300"}">
+            <div class="flex justify-between text-sm border-b border-slate-200 pb-2 ${soldOut ? "text-red-600" : "text-slate-700"}">
               <span>${d.name}</span>
               <span>${ordered > 0 ? `已點 ${ordered} / ` : ""}尚餘 ${remaining} 份</span>
             </div>
@@ -428,8 +425,8 @@
       const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
       el.innerHTML = `
         <div class="stat-card"><p>總單數</p><p>${total}</p></div>
-        <div class="stat-card"><p>已完成</p><p class="text-emerald-400">${completed}</p></div>
-        <div class="stat-card"><p>待處理</p><p class="text-orange-400">${pending}</p></div>
+        <div class="stat-card"><p>已完成</p><p class="text-emerald-600">${completed}</p></div>
+        <div class="stat-card"><p>待處理</p><p class="text-orange-500">${pending}</p></div>
         <div class="stat-card"><p>今日營業額</p><p>$${revenue}</p></div>
         <div class="stat-card sm:col-span-2 lg:col-span-1"><p>最熱賣 Dish</p><p class="text-base">${topDish}</p></div>
       `;
@@ -468,23 +465,23 @@
         const itemCount  = (o.items || []).reduce((s, i) => s + (i.quantity || 1), 0);
         const isExpanded = expandedOrders.has(o.orderId);
         const detailRows = (o.items || []).map(i => `
-          <tr class="border-t border-slate-700">
-            <td class="py-1.5 pr-3 text-slate-300">${getMenuItemName(i.menuId, i.menuType, i.unitPrice)}</td>
-            <td class="py-1.5 text-center text-slate-400 w-10">x${i.quantity || 1}</td>
-            <td class="py-1.5 text-right text-slate-400 w-16">$${Number(i.unitPrice || 0).toFixed(0)}</td>
+          <tr class="border-t border-slate-200">
+            <td class="py-1.5 pr-3 text-slate-700">${getMenuItemName(i.menuId, i.menuType, i.unitPrice)}</td>
+            <td class="py-1.5 text-center text-slate-500 w-10">x${i.quantity || 1}</td>
+            <td class="py-1.5 text-right text-slate-500 w-16">$${Number(i.unitPrice || 0).toFixed(0)}</td>
             <td class="py-1.5 pl-3 text-slate-500 text-xs">${i.specialNote || ""}</td>
           </tr>`).join("");
         return `
-          <div class="border-b border-slate-700 last:border-0">
-            <div class="p-4 flex flex-wrap gap-3 justify-between items-start hover:bg-slate-800/50 cursor-pointer select-none"
+          <div class="border-b border-slate-200 last:border-0">
+            <div class="p-4 flex flex-wrap gap-3 justify-between items-start hover:bg-slate-50 cursor-pointer select-none"
                  onclick="toggleOrderDetail(${o.orderId}, this)">
               <div class="space-y-1 flex-1 min-w-0">
                 <div class="flex items-center gap-3 flex-wrap">
-                  <p class="font-medium text-white">訂單 #${o.orderId}</p>
-                  <span class="text-xs font-mono bg-slate-700 text-amber-300 px-2 py-0.5 rounded">取餐碼 ${pickupCode}</span>
+                  <p class="font-medium text-slate-800">訂單 #${o.orderId}</p>
+                  <span class="text-xs font-mono bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">取餐碼 ${pickupCode}</span>
                   <span class="text-xs text-slate-500">${itemCount} 項 · $${o.totalAmt || 0}</span>
                 </div>
-                <p class="text-xs text-slate-400">用戶 #${o.userId} · ${fmtTime(o.createdAt)}</p>
+                <p class="text-xs text-slate-500">用戶 #${o.userId} · ${fmtTime(o.createdAt)}</p>
               </div>
               <div class="flex flex-wrap gap-2 items-center" onclick="event.stopPropagation()">
                 ${orderStatusBadge(status)}
@@ -493,9 +490,9 @@
                 <span class="text-slate-500 text-xs pointer-events-none chevron">${isExpanded ? "▲" : "▼"}</span>
               </div>
             </div>
-            <div id="order-detail-${o.orderId}" class="${isExpanded ? "" : "hidden"} px-4 pb-4 bg-slate-900/40">
+            <div id="order-detail-${o.orderId}" class="${isExpanded ? "" : "hidden"} px-4 pb-4 bg-slate-50">
               <table class="w-full text-sm">
-                <thead><tr class="text-left text-xs text-slate-500 border-b border-slate-700">
+                <thead><tr class="text-left text-xs text-slate-500 border-b border-slate-200">
                   <th class="pb-1">項目</th><th class="pb-1 text-center w-10">數量</th>
                   <th class="pb-1 text-right w-16">單價</th><th class="pb-1 pl-3">備注</th>
                 </tr></thead>
@@ -561,7 +558,7 @@
       } catch (e) {
         todayOrders = [];
         lastOrdersJson = "";
-        el.innerHTML = `<p class="p-6 text-sm text-red-400 text-center">訂單載入失敗：${e.message}</p>`;
+        el.innerHTML = `<p class="p-6 text-sm text-red-600 text-center">訂單載入失敗：${e.message}</p>`;
         return;
       }
       el.innerHTML = buildOrderRows(todayOrders);
@@ -612,7 +609,7 @@
       const method = document.getElementById("verify-method").value;
       const msg    = document.getElementById("verify-msg");
 
-      if (!code) { msg.textContent = "請輸入取餐碼"; msg.className = "mt-2 text-sm text-red-400"; return; }
+      if (!code) { msg.textContent = "請輸入取餐碼"; msg.className = "mt-2 text-sm text-red-600"; return; }
 
       const order = resolvePickupCode(code);
 
@@ -641,16 +638,16 @@
 
       if (successCount > 0) {
         msg.innerHTML = `
-          <div class="bg-emerald-900/50 border border-emerald-700 rounded p-3 text-sm space-y-1">
-            <p class="font-semibold text-emerald-300">✅ 核銷成功（${successCount} 項）</p>
-            <p class="text-slate-300">訂單 #${orderId} · 用戶 #${order.userId} · $${order.totalAmt || 0}</p>
-            <p class="text-slate-400">${itemSummary}</p>
+          <div class="bg-emerald-50 border border-emerald-200 rounded p-3 text-sm space-y-1">
+            <p class="font-semibold text-emerald-700">✅ 核銷成功（${successCount} 項）</p>
+            <p class="text-slate-700">訂單 #${orderId} · 用戶 #${order.userId} · $${order.totalAmt || 0}</p>
+            <p class="text-slate-500">${itemSummary}</p>
           </div>`;
         msg.className = "mt-2 text-sm";
         document.getElementById("verify-code").value = "";
         refreshKitchenDashboard();
       } else {
-        msg.innerHTML = `<span class="text-red-400">核銷失敗，請稍後再試。</span>`;
+        msg.innerHTML = `<span class="text-red-600">核銷失敗，請稍後再試。</span>`;
         msg.className = "mt-2 text-sm";
       }
     }
