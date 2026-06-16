@@ -46,18 +46,18 @@
     }
     .lux-header-inner {
       max-width: 1280px; margin: 0 auto;
-      padding: 12px 28px;
+      padding: 18px 36px;
       display: flex; align-items: center; justify-content: space-between; gap: 16px;
       flex-wrap: wrap;
     }
     .lux-brand { display: flex; align-items: baseline; gap: 8px; }
     .lux-brand-flanks { color: var(--lux-gold); font-size: 11px; letter-spacing: 1px; }
     .lux-brand-name {
-      font-size: 13px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase;
+      font-size: 14px; font-weight: 400; letter-spacing: 7px; text-transform: uppercase;
       color: var(--lux-ink);
     }
     .lux-brand-subtitle {
-      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
       color: var(--lux-gold);
     }
     .lux-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -69,8 +69,8 @@
 
     /* ── BADGES ── */
     .lux-badge {
-      display: inline-block; border-radius: 20px;
-      font-size: 10px; font-weight: 400; letter-spacing: 1.5px; text-transform: uppercase;
+      display: inline-block; border-radius: 2px;
+      font-size: 10px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
       padding: 3px 10px; border: 1px solid; white-space: nowrap;
     }
     .lux-badge-open     { border-color: var(--lux-gold);    color: var(--lux-gold-dark); }
@@ -86,8 +86,8 @@
       display: block; width: 100%;
       background: var(--lux-ink); border: 1px solid var(--lux-ink); color: var(--lux-bg);
       border-radius: 2px; font-size: 11px; font-weight: 400;
-      letter-spacing: 2px; text-transform: uppercase;
-      padding: 9px 16px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+      letter-spacing: 3px; text-transform: uppercase;
+      padding: 11px 20px; cursor: pointer; transition: all 0.2s ease; text-align: center;
     }
     .lux-btn-ink:hover:not(:disabled) { opacity: 0.85; }
     .lux-btn-ink:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -95,16 +95,16 @@
       display: block; width: 100%;
       background: transparent; border: 1px solid var(--lux-border); color: var(--lux-ink);
       border-radius: 2px; font-size: 11px; font-weight: 400;
-      letter-spacing: 2px; text-transform: uppercase;
-      padding: 9px 16px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+      letter-spacing: 3px; text-transform: uppercase;
+      padding: 11px 20px; cursor: pointer; transition: all 0.2s ease; text-align: center;
     }
     .lux-btn-ghost:hover { border-color: var(--lux-gold); color: var(--lux-gold-dark); }
     .lux-btn-gold {
       display: block; width: 100%;
       background: transparent; border: 1px solid var(--lux-gold); color: var(--lux-gold-dark);
       border-radius: 2px; font-size: 11px; font-weight: 400;
-      letter-spacing: 2px; text-transform: uppercase;
-      padding: 9px 16px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+      letter-spacing: 3px; text-transform: uppercase;
+      padding: 11px 20px; cursor: pointer; transition: all 0.2s ease; text-align: center;
     }
     .lux-btn-gold:hover { background: var(--lux-surface-dim); }
     .lux-btn-inline { width: auto; display: inline-block; padding: 5px 14px; }
@@ -120,14 +120,14 @@
 
     /* ── HAIRLINES ── */
     .lux-hairline             { height: 1px; background: var(--lux-border); }
-    .lux-hairline-gold-short  { width: 28px; height: 1px; background: var(--lux-gold); }
-    .lux-hairline-gold-center { width: 28px; height: 1px; background: var(--lux-gold); margin: 0 auto; }
+    .lux-hairline-gold-short  { width: 44px; height: 1px; background: var(--lux-gold); }
+    .lux-hairline-gold-center { width: 44px; height: 1px; background: var(--lux-gold); margin: 0 auto; }
 
     /* ── LAYOUT ── */
     .lux-main {
       max-width: 1440px; margin: 0 auto;
-      padding: 36px 28px;
-      display: grid; grid-template-columns: 200px 1fr 320px; gap: 28px;
+      padding: 60px 36px;
+      display: grid; grid-template-columns: 200px 1fr 320px; gap: 36px;
       align-items: start;
     }
     @media (max-width: 1100px) {
@@ -140,42 +140,42 @@
     }
 
     /* ── SECTION HEADER ── */
-    .lux-section-block { margin-bottom: 48px; }
-    .lux-section-header { margin-bottom: 20px; }
+    .lux-section-block { margin-bottom: 96px; }
+    .lux-section-header { margin-bottom: 36px; }
     .lux-section-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 26px; font-weight: 400; letter-spacing: 0.02em;
-      color: var(--lux-ink); margin: 8px 0 4px;
+      font-size: 46px; font-weight: 400; font-style: italic; letter-spacing: 0.02em;
+      color: var(--lux-ink); margin: 14px 0 6px;
     }
     .lux-section-hint {
-      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
-      color: var(--lux-muted);
+      font-size: 9px; letter-spacing: 4.5px; text-transform: uppercase;
+      color: var(--lux-muted); margin-top: 6px;
     }
 
     /* ── MENU GRID ── */
     .lux-menu-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
     }
     @media (max-width: 700px) { .lux-menu-grid { grid-template-columns: repeat(2, 1fr); } }
 
     /* ── MENU CARD ── */
     .lux-menu-card {
       border: 1px solid var(--lux-border); border-radius: 4px;
-      background: var(--lux-surface); transition: border-color 0.2s ease; overflow: hidden;
+      background: var(--lux-surface); transition: border-color 0.25s ease, box-shadow 0.25s ease; overflow: hidden;
     }
-    .lux-menu-card:hover { border-color: var(--lux-gold); }
+    .lux-menu-card:hover { border-color: var(--lux-gold); box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
     .lux-menu-card.lux-soldout { opacity: 0.55; }
-    .lux-card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-    .lux-card-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .lux-card-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; }
+    .lux-card-body { padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; }
     .lux-category-label {
-      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
-      color: var(--lux-gold-dark);
+      font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--lux-muted);
     }
     .lux-dish-name {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 15px; font-weight: 400; color: var(--lux-ink); line-height: 1.3;
+      font-size: 21px; font-style: italic; font-weight: 400; color: var(--lux-ink); line-height: 1.2;
     }
-    .lux-price-stock { font-size: 13px; font-weight: 500; color: var(--lux-ink-soft); }
+    .lux-price-stock { font-size: 12px; font-weight: 500; color: var(--lux-ink-soft); }
     .lux-stock { font-size: 10px; font-weight: 400; letter-spacing: 0.5px; color: var(--lux-muted); }
     .lux-options { display: flex; flex-direction: column; gap: 3px; max-height: 72px; overflow-y: auto; margin-top: 2px; }
     .lux-option-label {
@@ -193,7 +193,7 @@
     }
     .lux-sidebar-section { padding: 20px; }
     .lux-sidebar-label {
-      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+      font-size: 10px; letter-spacing: 3.5px; text-transform: uppercase;
       color: var(--lux-muted); display: block; margin-bottom: 12px;
     }
     .lux-cart-count { font-size: 10px; letter-spacing: 1.5px; color: var(--lux-gold-dark); }
@@ -218,7 +218,7 @@
       display: flex; justify-content: space-between; align-items: center; padding-top: 12px;
     }
     .lux-subtotal-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--lux-muted); }
-    .lux-subtotal-amount { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--lux-ink); }
+    .lux-subtotal-amount { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; color: var(--lux-ink); }
 
     /* ── STATUS BANNER ── */
     .lux-status-banner {
@@ -244,7 +244,7 @@
     }
     .lux-modal-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 22px; font-weight: 400; color: var(--lux-ink);
+      font-size: 28px; font-style: italic; font-weight: 400; color: var(--lux-ink);
     }
     .lux-modal-close {
       background: none; border: none; font-size: 10px; letter-spacing: 2px;
@@ -266,7 +266,7 @@
       color: var(--lux-gold-dark); margin-bottom: 8px;
     }
     .lux-wallet-balance-amount {
-      font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 400; color: var(--lux-ink);
+      font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 400; color: var(--lux-ink);
     }
     .lux-wallet-meta { font-size: 10px; color: var(--lux-muted); margin-top: 6px; letter-spacing: 0.5px; }
     .lux-topup-section {
@@ -281,9 +281,9 @@
 
     /* ── FOOTER ── */
     .lux-footer {
-      border-top: 1px solid var(--lux-border); padding: 24px; text-align: center; margin-top: 20px;
+      border-top: 1px solid var(--lux-border); padding: 44px 24px; text-align: center; margin-top: 20px;
     }
-    .lux-footer p { font-size: 11px; letter-spacing: 0.8px; color: var(--lux-hint); }
+    .lux-footer p { font-size: 11px; letter-spacing: 0.8px; color: var(--lux-hint); letter-spacing: 0.8px; }
     .lux-footer a { color: var(--lux-gold-dark); text-decoration: none; }
     .lux-footer a:hover { text-decoration: underline; }
 
