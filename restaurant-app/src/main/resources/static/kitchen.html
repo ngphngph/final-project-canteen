@@ -5,26 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kitchen Dashboard - Canteen</title>
   <link rel="stylesheet" href="/canteen-present.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: { brand: { green: "#16a34a", orange: "#f97316" } }
+          colors: { brand: { green: "#C4A882", orange: "#8B7355" } }
         }
       }
     }
   </script>
+  <style>
+    :root {
+      --lux-bg: #FAFAF8; --lux-surface: #FFFFFF; --lux-surface-dim: #F2EFE9;
+      --lux-border: #E8E4DE; --lux-ink: #1A1A1A; --lux-ink-soft: #3A3428;
+      --lux-muted: #7A7168; --lux-hint: #B0A898;
+      --lux-gold: #C4A882; --lux-gold-dark: #8B7355;
+      --lux-error: #9B5A5A; --lux-success: #3A6B4A; --lux-warn: #8B6914;
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--lux-bg); color: var(--lux-ink); }
+    body.present-kitchen { background: var(--lux-bg) !important; }
+    /* Sidebar */
+    .lux-sidebar { background: var(--lux-ink); color: #FAFAF8; min-height: 100vh; }
+    .lux-sidebar a {
+      color: rgba(250,250,248,0.5); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 0.5rem 1.25rem; display: block; text-decoration: none;
+      border-left: 2px solid transparent; transition: color 0.15s, background 0.15s;
+    }
+    .lux-sidebar a:hover { color: rgba(250,250,248,0.9); background: rgba(196,168,130,0.08); }
+    .lux-sidebar a.active { color: #fff; border-left-color: var(--lux-gold); background: rgba(196,168,130,0.1); }
+    /* Topbar */
+    .lux-topbar { background: var(--lux-surface); border-bottom: 1px solid var(--lux-border); }
+    /* Cards */
+    .present-card { border-color: var(--lux-border) !important; }
+    /* Table header: ink */
+    .present-table thead tr { background: var(--lux-ink) !important; }
+    /* Buttons */
+    .present-btn-primary {
+      background: var(--lux-ink) !important; color: var(--lux-bg) !important;
+      border-radius: 2px !important; letter-spacing: 0.06em; font-weight: 400;
+    }
+    .present-btn-primary:hover:not(:disabled) { opacity: 0.82; }
+    /* Badges */
+    .present-badge-supply {
+      background: transparent !important; color: var(--lux-success) !important;
+      border: 1px solid var(--lux-success) !important; border-radius: 20px;
+    }
+    .present-badge-sold {
+      background: transparent !important; color: var(--lux-error) !important;
+      border: 1px solid var(--lux-error) !important; border-radius: 20px;
+    }
+    /* Stat cards */
+    .present-kitchen .stat-card { background: var(--lux-surface-dim) !important; border-color: var(--lux-border) !important; }
+    input, select { border-color: var(--lux-border); font-family: 'DM Sans', sans-serif; }
+    input:focus, select:focus { border-color: var(--lux-gold) !important; outline: none !important; box-shadow: none !important; }
+  </style>
 </head>
 <body class="present-ui present-kitchen">
 
   <!-- Kitchen Login Overlay -->
-  <div id="kitchenLoginOverlay" class="fixed inset-0 bg-slate-900/95 flex items-center justify-center z-50">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
+  <div id="kitchenLoginOverlay" class="fixed inset-0 flex items-center justify-center z-50" style="background:rgba(26,26,26,0.55)">
+    <div class="bg-white p-8 w-full max-w-sm mx-4" style="border:1px solid #E8E4DE;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,0.12)">
       <div class="text-center mb-6">
-        <span class="text-4xl">👨‍🍳</span>
-        <h1 class="font-bold text-xl text-slate-800 mt-2">Kitchen Panel</h1>
-        <p class="text-sm text-slate-500">廚房後台登入</p>
+        <span class="text-3xl">👨‍🍳</span>
+        <h1 class="mt-3 text-slate-800" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400">Kitchen Panel</h1>
+        <p class="text-xs mt-1" style="letter-spacing:2px;text-transform:uppercase;color:#7A7168">廚房後台登入</p>
       </div>
       <div class="space-y-4">
         <div>
@@ -49,37 +95,37 @@
   </div>
 
   <div id="kitchenMainContent" class="min-h-screen flex hidden">
-    <aside class="kitchen-sidebar w-56 shrink-0 hidden md:flex flex-col p-4">
-      <div class="flex items-center gap-2 mb-6 pb-4 border-b border-white/20">
+    <aside class="lux-sidebar w-56 shrink-0 hidden md:flex flex-col p-4">
+      <div class="flex items-center gap-2 mb-6 pb-4" style="border-bottom:1px solid rgba(250,250,248,0.1)">
         <span class="text-2xl">👨‍🍳</span>
         <div>
-          <p class="font-bold text-white text-sm">KITCHEN_USER</p>
-          <p class="text-xs text-emerald-200/80">廚房後台</p>
+          <p class="text-sm font-medium tracking-widest uppercase text-white">Kitchen</p>
+          <p class="text-xs" style="color:rgba(250,250,248,0.45);letter-spacing:1px">廚房後台</p>
         </div>
       </div>
-      <nav class="space-y-1 text-sm flex-1">
+      <nav class="space-y-0.5 flex-1">
         <a href="#" class="active">總覽</a>
         <a href="#">訂單管理</a>
         <a href="#">備貨確認</a>
         <a href="#">菜單管理</a>
         <a href="#">銷售報告</a>
       </nav>
-      <div class="pt-4 border-t border-white/20 text-sm space-y-2">
-        <a href="#" class="text-emerald-200/80">設定</a>
-        <a href="#" class="text-emerald-200/80">登出</a>
+      <div class="pt-4 space-y-1" style="border-top:1px solid rgba(250,250,248,0.1)">
+        <a href="#">設定</a>
+        <a href="#" onclick="kitchenLogout(); return false">登出</a>
       </div>
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="admin-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 class="font-semibold text-slate-700">午餐訂餐系統 — 廚房後台</h2>
-        <div class="flex items-center gap-4 text-sm text-slate-600">
+      <header class="lux-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-medium text-sm tracking-widest uppercase" style="color:#7A7168">午餐訂餐系統 — 廚房後台</h2>
+        <div class="flex items-center gap-4 text-sm" style="color:#7A7168">
           <div class="text-right">
-            <p class="text-emerald-600 text-sm font-medium">系統狀態：正常 ●</p>
-            <p id="kitchenClock" class="text-slate-500 text-xs mt-0.5"></p>
+            <p class="text-sm font-medium" style="color:#3A6B4A">系統狀態：正常 ●</p>
+            <p id="kitchenClock" class="text-xs mt-0.5" style="color:#B0A898"></p>
           </div>
           <div class="flex flex-col items-end gap-1">
-            <span id="kitchenTopbarUser" class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> 廚房用戶</span>
+            <span id="kitchenTopbarUser" class="flex items-center gap-2"><span class="w-8 h-8 rounded-full flex items-center justify-center" style="background:#F2EFE9">👤</span> 廚房用戶</span>
             <button type="button" onclick="kitchenLogout()"
                     class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors text-xs font-medium">
               登出
@@ -235,7 +281,7 @@
         kitchenUser = u;
         kitchenPass = p;
         try { sessionStorage.setItem("_ku", u); sessionStorage.setItem("_kp", p); } catch (_) {}
-        document.getElementById("kitchenTopbarUser").innerHTML = `<span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> ${u}`;
+        document.getElementById("kitchenTopbarUser").innerHTML = `<span class="w-8 h-8 rounded-full flex items-center justify-center" style="background:#F2EFE9">👤</span> ${u}`;
         document.getElementById("kitchenLoginOverlay").classList.add("hidden");
         document.getElementById("kitchenMainContent").classList.remove("hidden");
         loadDishesFromApi();
@@ -348,13 +394,14 @@
     }
 
     function orderStatusBadge(status) {
+      const s = 'font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap;display:inline-block';
       const map = {
-        PENDING_PAY:  '<span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600">待付款</span>',
-        DEPOSIT_PAID: '<span class="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">已付訂金・備餐中</span>',
-        FULLY_PAID:   '<span class="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-700">已全額付款・備餐中</span>',
-        COMPLETE:     '<span class="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">已完成出餐</span>',
+        PENDING_PAY:  `<span style="${s};color:#7A7168;border-color:#E8E4DE;background:#F2EFE9">待付款</span>`,
+        DEPOSIT_PAID: `<span style="${s};color:#8B6914;border-color:#C4A882;background:#F2EFE9">已付訂金・備餐中</span>`,
+        FULLY_PAID:   `<span style="${s};color:#8B7355;border-color:#C4A882;background:#F2EFE9">已全額付款・備餐中</span>`,
+        COMPLETE:     `<span style="${s};color:#3A6B4A;border-color:#3A6B4A;background:#F2EFE9">已完成出餐</span>`,
       };
-      return map[status] || `<span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-500">${status}</span>`;
+      return map[status] || `<span style="${s};color:#7A7168;border-color:#E8E4DE;background:#F2EFE9">${status}</span>`;
     }
 
     function getMenuItemName(menuId, menuType, unitPrice) {
@@ -425,8 +472,8 @@
       const topDish = Object.entries(dishCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
       el.innerHTML = `
         <div class="stat-card"><p>總單數</p><p>${total}</p></div>
-        <div class="stat-card"><p>已完成</p><p class="text-emerald-600">${completed}</p></div>
-        <div class="stat-card"><p>待處理</p><p class="text-orange-500">${pending}</p></div>
+        <div class="stat-card"><p>已完成</p><p style="color:#3A6B4A">${completed}</p></div>
+        <div class="stat-card"><p>待處理</p><p style="color:#8B6914">${pending}</p></div>
         <div class="stat-card"><p>今日營業額</p><p>$${revenue}</p></div>
         <div class="stat-card sm:col-span-2 lg:col-span-1"><p>最熱賣 Dish</p><p class="text-base">${topDish}</p></div>
       `;
@@ -638,10 +685,10 @@
 
       if (successCount > 0) {
         msg.innerHTML = `
-          <div class="bg-emerald-50 border border-emerald-200 rounded p-3 text-sm space-y-1">
-            <p class="font-semibold text-emerald-700">✅ 核銷成功（${successCount} 項）</p>
-            <p class="text-slate-700">訂單 #${orderId} · 用戶 #${order.userId} · $${order.totalAmt || 0}</p>
-            <p class="text-slate-500">${itemSummary}</p>
+          <div class="rounded p-3 text-sm space-y-1" style="background:#F2EFE9;border:1px solid #C4A882">
+            <p class="font-semibold" style="color:#3A6B4A">✅ 核銷成功（${successCount} 項）</p>
+            <p style="color:#3A3428">訂單 #${orderId} · 用戶 #${order.userId} · $${order.totalAmt || 0}</p>
+            <p style="color:#7A7168">${itemSummary}</p>
           </div>`;
         msg.className = "mt-2 text-sm";
         document.getElementById("verify-code").value = "";

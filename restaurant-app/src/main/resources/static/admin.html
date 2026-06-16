@@ -5,28 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard - Canteen</title>
   <link rel="stylesheet" href="/canteen-present.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brand: { green: "#16a34a", orange: "#f97316" }
+            brand: { green: "#C4A882", orange: "#8B7355" }
           }
         }
       }
     }
   </script>
+  <style>
+    :root {
+      --lux-bg: #FAFAF8; --lux-surface: #FFFFFF; --lux-surface-dim: #F2EFE9;
+      --lux-border: #E8E4DE; --lux-ink: #1A1A1A; --lux-ink-soft: #3A3428;
+      --lux-muted: #7A7168; --lux-hint: #B0A898;
+      --lux-gold: #C4A882; --lux-gold-dark: #8B7355;
+      --lux-error: #9B5A5A; --lux-success: #3A6B4A; --lux-warn: #8B6914;
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--lux-bg); color: var(--lux-ink); }
+    body.present-admin { background: var(--lux-bg) !important; }
+    /* Sidebar */
+    .lux-sidebar { background: var(--lux-ink); color: #FAFAF8; min-height: 100vh; }
+    .lux-sidebar a {
+      color: rgba(250,250,248,0.5); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 0.5rem 1.25rem; display: block; text-decoration: none;
+      border-left: 2px solid transparent; transition: color 0.15s, background 0.15s;
+    }
+    .lux-sidebar a:hover { color: rgba(250,250,248,0.9); background: rgba(196,168,130,0.08); }
+    .lux-sidebar a.active { color: #fff; border-left-color: var(--lux-gold); background: rgba(196,168,130,0.1); }
+    /* Topbar */
+    .lux-topbar { background: var(--lux-surface); border-bottom: 1px solid var(--lux-border); }
+    /* Cards */
+    .present-card { border-color: var(--lux-border) !important; }
+    /* Table header: ink instead of green */
+    .present-table thead tr { background: var(--lux-ink) !important; }
+    /* Buttons */
+    .present-btn-primary {
+      background: var(--lux-ink) !important; color: var(--lux-bg) !important;
+      border-radius: 2px !important; letter-spacing: 0.06em; font-weight: 400;
+    }
+    .present-btn-primary:hover:not(:disabled) { opacity: 0.82; }
+    .present-btn-orange {
+      background: transparent !important; color: var(--lux-gold-dark) !important;
+      border: 1px solid var(--lux-gold) !important; border-radius: 2px !important;
+    }
+    .present-btn-orange:hover { background: var(--lux-surface-dim) !important; }
+    /* Badges */
+    .present-badge-on {
+      background: transparent !important; color: var(--lux-success) !important;
+      border: 1px solid var(--lux-success) !important; border-radius: 20px;
+    }
+    .present-badge-sold {
+      background: transparent !important; color: var(--lux-error) !important;
+      border: 1px solid var(--lux-error) !important; border-radius: 20px;
+    }
+    /* Quick-cash & chip buttons */
+    .lux-chip-gold {
+      background: var(--lux-surface-dim); border: 1px solid var(--lux-gold);
+      color: var(--lux-gold-dark); border-radius: 4px;
+      transition: background 0.15s; cursor: pointer;
+    }
+    .lux-chip-gold:hover { background: var(--lux-border); }
+    /* Order-window status chip */
+    .lux-badge-status {
+      background: var(--lux-surface-dim); color: var(--lux-gold-dark);
+      border: 1px solid var(--lux-gold); border-radius: 9999px;
+      font-size: 0.75rem; padding: 0.2rem 0.75rem; white-space: nowrap; display: inline-block;
+    }
+    input, select { border-color: var(--lux-border); font-family: 'DM Sans', sans-serif; }
+    input:focus, select:focus { border-color: var(--lux-gold) !important; outline: none !important; box-shadow: none !important; }
+  </style>
 </head>
 <body class="present-ui present-admin text-slate-800">
 
   <!-- Admin Login Overlay -->
-  <div id="adminLoginOverlay" class="fixed inset-0 bg-slate-900/95 flex items-center justify-center z-50">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
+  <div id="adminLoginOverlay" class="fixed inset-0 flex items-center justify-center z-50" style="background:rgba(26,26,26,0.55)">
+    <div class="bg-white p-8 w-full max-w-sm mx-4" style="border:1px solid #E8E4DE;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,0.12)">
       <div class="text-center mb-6">
-        <span class="text-4xl">🍽</span>
-        <h1 class="font-bold text-xl text-slate-800 mt-2">Admin Panel</h1>
-        <p class="text-sm text-slate-500">午餐訂餐系統管理後台</p>
+        <span class="text-3xl">🍽</span>
+        <h1 class="mt-3 text-slate-800" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400">Admin Panel</h1>
+        <p class="text-xs mt-1" style="letter-spacing:2px;text-transform:uppercase;color:#7A7168">午餐訂餐系統管理後台</p>
       </div>
       <div class="space-y-4">
         <div>
@@ -51,26 +113,26 @@
   </div>
 
   <div id="adminMainContent" class="min-h-screen flex hidden">
-    <aside class="admin-sidebar w-60 shrink-0 hidden md:block">
-      <div class="p-5 border-b border-white/10">
+    <aside class="lux-sidebar w-60 shrink-0 hidden md:flex flex-col">
+      <div class="p-5" style="border-bottom:1px solid rgba(250,250,248,0.1)">
         <div class="flex items-center gap-2">
           <span class="text-2xl">🍽</span>
           <div>
-            <h1 class="font-bold text-base">Admin Panel</h1>
-            <p class="text-xs text-emerald-200/80">午餐訂餐系統</p>
+            <h1 class="text-sm font-medium tracking-widest uppercase text-white">Admin</h1>
+            <p class="text-xs" style="color:rgba(250,250,248,0.45);letter-spacing:1px">午餐訂餐系統</p>
           </div>
         </div>
       </div>
-      <nav class="p-3 space-y-1 text-sm">
-        <a href="#section-overview" class="active block px-3 py-2 rounded-lg">首頁總覽</a>
-        <a href="#section-dish" class="block px-3 py-2 rounded-lg">菜單管理</a>
-        <a href="#section-dish" class="block px-3 py-2 rounded-lg pl-6 text-emerald-100/90">Dish 菜單管理</a>
-        <a href="#section-drink" class="block px-3 py-2 rounded-lg pl-6 text-emerald-100/90">Drink 菜單管理</a>
-        <a href="#section-orders" class="block px-3 py-2 rounded-lg">訂單管理</a>
-        <a href="#section-order-window" class="block px-3 py-2 rounded-lg">訂購時段設定</a>
-        <a href="#section-recharge" class="block px-3 py-2 rounded-lg">用戶充值管理</a>
-        <a href="#section-reset-password" class="block px-3 py-2 rounded-lg">重置用戶密碼</a>
-        <a href="#section-feedback" class="block px-3 py-2 rounded-lg flex items-center justify-between">
+      <nav class="mt-2 flex-1 space-y-0.5">
+        <a href="#section-overview" class="active">首頁總覽</a>
+        <a href="#section-dish">菜單管理</a>
+        <a href="#section-dish" style="padding-left:2rem">Dish 菜單管理</a>
+        <a href="#section-drink" style="padding-left:2rem">Drink 菜單管理</a>
+        <a href="#section-orders">訂單管理</a>
+        <a href="#section-order-window">訂購時段設定</a>
+        <a href="#section-recharge">用戶充值管理</a>
+        <a href="#section-reset-password">重置用戶密碼</a>
+        <a href="#section-feedback" class="flex items-center justify-between">
           用戶回饋管理
           <span id="feedbackBadge" class="hidden text-xs bg-red-500 text-white rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center"></span>
         </a>
@@ -78,10 +140,10 @@
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="admin-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 class="font-semibold text-slate-700">午餐訂餐系統 — 管理後台</h2>
-        <div class="flex items-center gap-4 text-sm text-slate-600">
-          <span id="topbarUsername" class="flex items-center gap-2"><span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> 管理員</span>
+      <header class="lux-topbar px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-medium text-sm tracking-widest uppercase" style="color:#7A7168">午餐訂餐系統 — 管理後台</h2>
+        <div class="flex items-center gap-4 text-sm" style="color:#7A7168">
+          <span id="topbarUsername" class="flex items-center gap-2"><span class="w-8 h-8 rounded-full flex items-center justify-center" style="background:#F2EFE9">👤</span> 管理員</span>
           <button type="button" onclick="adminLogout()"
                   class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors text-xs font-medium">
             登出
@@ -124,10 +186,10 @@
             <h2 class="font-semibold text-lg text-slate-800">訂購時段設定</h2>
             <p class="text-sm text-slate-500">設定 Student / Teacher 可下單的時間範圍。啟用後，時段以外將無法下單。</p>
           </div>
-          <span id="orderWindowCurrent" class="text-sm px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"></span>
+          <span id="orderWindowCurrent" class="lux-badge-status text-sm"></span>
         </div>
         <div class="space-y-3">
-          <div class="grid sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <div class="grid sm:grid-cols-2 gap-3 p-3 rounded" style="background:#F2EFE9;border:1px solid #E8E4DE">
             <p class="col-span-full text-xs font-medium text-slate-500">時段一</p>
             <label class="block text-sm">
               <span class="text-slate-600">開始時間</span>
@@ -138,7 +200,7 @@
               <input id="orderWindowEnd1" type="time" class="mt-1 border rounded px-2 py-1.5 w-full" />
             </label>
           </div>
-          <div class="grid sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <div class="grid sm:grid-cols-2 gap-3 p-3 rounded" style="background:#F2EFE9;border:1px solid #E8E4DE">
             <p class="col-span-full text-xs font-medium text-slate-500">時段二</p>
             <label class="block text-sm">
               <span class="text-slate-600">開始時間</span>
@@ -250,22 +312,10 @@
           <div>
             <p class="text-xs font-medium text-slate-500 mb-2">快速選擇現金金額</p>
             <div class="flex flex-wrap gap-2">
-              <button type="button" onclick="rcSetCash(50)"
-                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
-                $50
-              </button>
-              <button type="button" onclick="rcSetCash(100)"
-                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
-                $100
-              </button>
-              <button type="button" onclick="rcSetCash(200)"
-                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
-                $200
-              </button>
-              <button type="button" onclick="rcSetCash(500)"
-                class="px-5 py-2.5 rounded-xl bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 hover:border-emerald-400 transition-colors">
-                $500
-              </button>
+              <button type="button" onclick="rcSetCash(50)" class="lux-chip-gold px-5 py-2.5 text-sm font-medium">$50</button>
+              <button type="button" onclick="rcSetCash(100)" class="lux-chip-gold px-5 py-2.5 text-sm font-medium">$100</button>
+              <button type="button" onclick="rcSetCash(200)" class="lux-chip-gold px-5 py-2.5 text-sm font-medium">$200</button>
+              <button type="button" onclick="rcSetCash(500)" class="lux-chip-gold px-5 py-2.5 text-sm font-medium">$500</button>
             </div>
           </div>
           <!-- Confirm row -->
@@ -292,8 +342,8 @@
           <h2 class="font-semibold text-lg text-slate-800 mb-1">重置用戶密碼</h2>
           <p class="text-sm text-slate-500">輸入管理員本身的帳號驗證身份，再輸入目標電話與新密碼。</p>
         </div>
-        <div class="grid sm:grid-cols-2 gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <p class="col-span-full text-xs font-semibold text-amber-700">管理員身份驗證</p>
+        <div class="grid sm:grid-cols-2 gap-3 p-4 rounded" style="background:#F2EFE9;border:1px solid #C4A882">
+          <p class="col-span-full text-xs font-semibold" style="color:#8B7355">管理員身份驗證</p>
           <label class="block text-sm">
             <span class="text-slate-600">管理員電話（8位）</span>
             <input id="rp-admin-phone" type="text" maxlength="8" placeholder="12345678"
@@ -604,7 +654,7 @@
         adminPass = p;
         try { sessionStorage.setItem("_au", u); sessionStorage.setItem("_ap", p); } catch (_) {}
         document.getElementById("topbarUsername").innerHTML =
-          `<span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">👤</span> ${u}`;
+          `<span class="w-8 h-8 rounded-full flex items-center justify-center" style="background:#F2EFE9">👤</span> ${u}`;
         document.getElementById("adminLoginOverlay").classList.add("hidden");
         document.getElementById("adminMainContent").classList.remove("hidden");
         loadMenuFromApi();
@@ -640,7 +690,7 @@
         }
 
         list.innerHTML = data.map(f => `
-          <div class="flex gap-3 items-start border rounded-lg p-3 ${f.read ? 'bg-white' : 'bg-blue-50 border-blue-200'}">
+          <div class="flex gap-3 items-start border rounded p-3 ${f.read ? 'bg-white' : ''}" style="${f.read ? '' : 'background:#F2EFE9;border-color:#C4A882'}">
             <div class="flex-1 min-w-0">
               <p class="text-slate-800 break-words">${f.content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>
               <p class="text-xs text-slate-400 mt-1">
@@ -650,7 +700,7 @@
               </p>
             </div>
             ${!f.read ? `<button onclick="markFeedbackRead(${f.id})"
-              class="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">標為已讀</button>` : ""}
+              class="shrink-0 text-xs px-2.5 py-1" style="background:#1A1A1A;color:#FAFAF8;border-radius:2px;letter-spacing:0.05em">標為已讀</button>` : ""}
           </div>`).join("");
       } catch (_) {
         list.innerHTML = '<p class="text-red-500 text-center py-4">連線失敗</p>';
@@ -880,9 +930,7 @@
       const slotsText = slots.map(s => `${s.start}-${s.end}`).join("、");
       const badge = document.getElementById("orderWindowCurrent");
       badge.textContent = cfg.enforced ? `目前：${slotsText}（已啟用）` : `目前：${slotsText}（未啟用）`;
-      badge.className = cfg.enforced
-        ? "text-sm px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"
-        : "text-sm px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200";
+      badge.className = "lux-badge-status text-sm";
     }
 
     async function renderOrderWindowForm() {
