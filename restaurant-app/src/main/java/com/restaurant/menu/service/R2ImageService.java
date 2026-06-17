@@ -49,18 +49,25 @@ public class R2ImageService implements ImageService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Image file is required");
         }
-        if (!"image/jpeg".equals(file.getContentType())) {
-            throw new IllegalArgumentException("Only JPG/JPEG images are allowed");
+
+        String contentType = file.getContentType();
+        String extension;
+        if ("image/jpeg".equals(contentType)) {
+            extension = "jpg";
+        } else if ("image/png".equals(contentType)) {
+            extension = "png";
+        } else {
+            throw new IllegalArgumentException("Only JPG/JPEG or PNG images are allowed");
         }
 
         String filename = prefix + "_" + System.currentTimeMillis()
-                + "-" + (1000 + new Random().nextInt(9000)) + ".jpg";
+                + "-" + (1000 + new Random().nextInt(9000)) + "." + extension;
 
         s3.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucket)
                         .key(filename)
-                        .contentType("image/jpeg")
+                        .contentType(contentType)
                         .build(),
                 RequestBody.fromBytes(file.getBytes()));
 
