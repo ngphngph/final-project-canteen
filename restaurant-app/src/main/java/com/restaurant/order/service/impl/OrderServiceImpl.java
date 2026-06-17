@@ -14,6 +14,7 @@ import com.restaurant.order.mapper.OrderMapper;
 import com.restaurant.order.repository.OrderItemRepository;
 import com.restaurant.order.repository.OrderRepository;
 import com.restaurant.order.service.OrderService;
+import com.restaurant.menu.service.OrderWindowService;
 import com.restaurant.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper orderMapper;
     private final PickupClient pickupClient;
+    private final OrderWindowService orderWindowService;
 
     @Override
     public List<OrderResp> getAllOrders() {
@@ -60,6 +62,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResp createOrder(OrderCreateReq req) {
+        orderWindowService.assertOpen();
         if (req.items() == null || req.items().isEmpty()) {
             throw new IllegalArgumentException("items must not be empty");
         }

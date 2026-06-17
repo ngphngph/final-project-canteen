@@ -86,7 +86,8 @@ public class DrinkService {
     @Transactional(readOnly = true)
     @Cacheable("drinks-today")
     public List<DrinkResponse> getTodayForClient() {
-        orderWindowService.assertOpen();
+        // Menu stays visible outside the order window — only placing an order is blocked
+        // (enforced in OrderServiceImpl.createOrder).
         return drinkRepository.findAllAvailable().stream().map(DrinkService::toResponse).toList();
     }
 
