@@ -1126,6 +1126,7 @@
 
     // ── 用戶充值管理 ──────────────────────────────────
     let _walletId = null;
+    let _rcUserId = null;
 
     function showMsg(id, text, ok) {
       const el = document.getElementById(id);
@@ -1145,6 +1146,7 @@
         if (!walletRes.ok) { alert("查詢錢包失敗：" + walletRes.status); return; }
         const w = await walletRes.json();
         _walletId = w.walletId;
+        _rcUserId = user.userId;
         document.getElementById("rc-userId").textContent = user.userId;
         document.getElementById("rc-role").textContent = user.role;
         document.getElementById("rc-walletId").textContent = w.walletId;
@@ -1209,7 +1211,10 @@
           })
         });
         if (!res.ok) { const e = await res.json().catch(() => ({})); showMsg("rc-msg", e.message || "充值失敗", false); return; }
-        const w = await res.json();
+        // recharge endpoint returns the transaction record, not the wallet balance —
+        // re-fetch the wallet to get the up-to-date balance.
+        const walletRes = await fetch(`${WALLET_BASE}/wallets/user/${_rcUserId}`);
+        const w = await walletRes.json();
         document.getElementById("rc-balance").textContent = `$${w.balance}`;
         document.getElementById("rc-amount").value = "";
         showMsg("rc-msg", `充值成功！新餘額：$${w.balance}`, true);
